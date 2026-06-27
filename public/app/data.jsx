@@ -3,10 +3,9 @@
 const URO_CATEGORIES = [
   { id: 'scope',   name: 'กล้องส่องตรวจ',    en: 'Scopes',           hue: 200 },
   { id: 'cath',    name: 'สายสวน',           en: 'Catheter',         hue: 165 },
-  { id: 'stent',   name: 'ขดลวด/สเตนท์',     en: 'Stent / Guidewire', hue: 35 },
-  { id: 'drape',   name: 'ผ้า / Drape',      en: 'Drape & Gown',      hue: 280 },
-  { id: 'fluid',   name: 'น้ำยา / Irrigation', en: 'Fluid',           hue: 220 },
-  { id: 'consum',  name: 'อุปกรณ์สิ้นเปลือง',  en: 'Consumables',     hue: 0 },
+  { id: 'stent',   name: 'เครื่องมือหลัก',   en: 'Main Instruments',  hue: 35  },
+  { id: 'drape',   name: 'อุปกรณ์ Lap',      en: 'Lap Equipment',     hue: 280 },
+  { id: 'consum',  name: 'อุปกรณ์สิ้นเปลือง', en: 'Consumables',      hue: 0   },
 ];
 
 /* Items: เพิ่ม ipiss (เลขครุภัณฑ์/รหัส IPISS พัสดุ) และ price (บาท/หน่วย) */
