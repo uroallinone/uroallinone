@@ -177,8 +177,10 @@ function App() {
 
   // Wipe all data so real data can be entered from a clean slate
   function startFresh() {
-    if (!window.confirm('ล้างข้อมูลทั้งหมด และเริ่มกรอกข้อมูลจริง?\n(ลบพัสดุ ประวัติการเคลื่อนไหว ครุภัณฑ์ และใบสั่งซื้อทั้งหมด)')) return;
+    if (!window.confirm('ล้างข้อมูลทั้งหมด และเริ่มกรอกข้อมูลจริง?\n(ลบพัสดุ ประวัติการเคลื่อนไหว ครุภัณฑ์ และใบสั่งซื้อทั้งหมด)\n\nข้อมูลจะลบจากทั้ง Local + Cloud')) return;
     setItems([]); setTxns([]); setEquipment([]); setPos([]);
+    // Push empty data to Supabase
+    if (hasCloud) UroCloud.push({ items: [], txns: [], equipment: [], po: [] });
     setSettingsOpen(false);
     showToast('ล้างข้อมูลแล้ว — เริ่มกรอกข้อมูลจริงได้เลย');
     setRoute('items');
