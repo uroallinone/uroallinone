@@ -1,0 +1,14 @@
+{
+  "name": "uro-all-around",
+  "version": "1.0.0",
+  "description": "ระบบจัดการพัสดุ แผนกผ่าตัด Uro — web app + SQLite database",
+  "private": true,
+  "scripts": {
+    "build": "node build.cjs",
+    "start": "node --experimental-sqlite server.js",
+    "dev": "node build.cjs && node --experimental-sqlite server.js"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  }
+}
