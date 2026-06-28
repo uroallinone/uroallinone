@@ -180,11 +180,12 @@ function Dashboard({ items, txns, burn, month, year, cats, onGo, onStockIn, onSt
 }
 
 /* ===== Items list ===== */
-function ItemsScreen({ items, cats, query, onCount, onStockIn, onStockOut, onAdd, onImport }) {
+function ItemsScreen({ items, cats, query, onCount, onStockIn, onStockOut, onAdd, onEdit, onDelete, onImport }) {
   const [cat, setCat] = useS('all');
   const [status, setStatus] = useS('all');
   const [showAdd, setShowAdd] = useS(false);
   const [showImport, setShowImport] = useS(false);
+  const [editItem, setEditItem] = useS(null);
 
   const filtered = items.filter(i => {
     if (cat !== 'all' && i.cat !== cat) return false;
@@ -285,6 +286,8 @@ function ItemsScreen({ items, cats, query, onCount, onStockIn, onStockOut, onAdd
                   <button className="stepper" onClick={()=>onCount(it.code, +1)} aria-label="เพิ่ม"><Icon k="plus" size={14}/></button>
                   <button className="btn btn-mini btn-ghost" onClick={()=>onStockIn(it.code)}>รับ</button>
                   <button className="btn btn-mini btn-primary" onClick={()=>onStockOut(it.code)}>เบิก</button>
+                  <button className="btn btn-mini btn-ghost" title="แก้ไข" onClick={()=>setEditItem(it)}>✏️</button>
+                  <button className="btn btn-mini btn-danger" title="ลบ" onClick={()=>{ if(window.confirm(`ลบ "${it.name}" ออกจากคลัง?`)) onDelete(it.code); }}>🗑️</button>
                 </div>
               </div>
             );
@@ -303,6 +306,7 @@ function ItemsScreen({ items, cats, query, onCount, onStockIn, onStockOut, onAdd
 
       {showAdd && <AddItemModal cats={cats} onClose={()=>setShowAdd(false)} onSave={(d)=>{ onAdd(d); setShowAdd(false); }}/>}
       {showImport && <ImportSheetModal onClose={()=>setShowImport(false)} onImport={(rows)=>{ onImport(rows); setShowImport(false); }}/>}
+      {editItem && <EditItemModal cats={cats} item={editItem} onClose={()=>setEditItem(null)} onSave={(d)=>{ onEdit(d); setEditItem(null); }}/>}
     </div>
   );
 }
@@ -363,6 +367,76 @@ function AddItemModal({ cats, onClose, onSave }) {
         <div className="form-actions">
           <button className="btn btn-ghost" onClick={onClose}>ยกเลิก</button>
           <button className="btn btn-primary" disabled={!ok} onClick={()=>onSave(d)}><Icon k="check" size={14}/><span>บันทึก</span></button>
+        </div>
+      </div>
+    </ModalShell>
+  );
+}
+
+/* ===== Edit item modal ===== */
+function EditItemModal({ cats, item, onClose, onSave }) {
+  const [d, setD] = useS({ ...item });
+  function set(k, v) { setD(o => ({ ...o, [k]: v })); }
+  const ok = d.ipiss && d.name && d.code;
+  return (
+    <ModalShell title="แก้ไขรายการพัสดุ" onClose={onClose} icon="edit">
+      <div className="form">
+        <div className="form-row">
+          <label className="lbl">เลข IPISS *
+            <div className="input-wrap"><input value={d.ipiss} onChange={e=>set('ipiss',e.target.value)}/></div>
+          </label>
+          <label className="lbl">รหัสภายใน *
+            <div className="input-wrap"><input value={d.code} onChange={e=>set('code',e.target.value)}/></div>
+          </label>
+        </div>
+        <label className="lbl">ชื่อพัสดุ *
+          <div className="input-wrap"><input value={d.name} onChange={e=>set('name',e.target.value)}/></div>
+        </label>
+        <div className="form-row">
+          <label className="lbl">หมวดหมู่
+            <div className="input-wrap"><select value={d.cat} onChange={e=>set('cat',e.target.value)} className="bare-select">
+              {cats.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select></div>
+          </label>
+          <label className="lbl">หน่วยนับ
+            <div className="input-wrap"><input value={d.unit} onChange={e=>set('unit',e.target.value)}/></div>
+          </label>
+        </div>
+        <div className="form-row">
+          <label className="lbl">จำนวนคงเหลือ
+            <div className="input-wrap"><input type="number" value={d.qty} onChange={e=>set('qty',Number(e.target.value))}/></div>
+          </label>
+          <label className="lbl">ขั้นต่ำสำหรับแจ้งเตือน
+            <div className="input-wrap"><input type="number" value={d.min} onChange={e=>set('min',Number(e.target.value))}/></div>
+          </label>
+        </div>
+        <div className="form-row">
+          <label className="lbl">ราคา/หน่วย (บาท)
+            <div className="input-wrap"><input type="number" value={d.price||0} onChange={e=>set('price',Number(e.target.value))}/></div>
+          </label>
+          <label className="lbl">ที่เก็บ
+            <div className="input-wrap"><input value={d.loc||''} onChange={e=>set('loc',e.target.value)}/></div>
+          </label>
+        </div>
+        <div className="form-row">
+          <label className="lbl">วันหมดอายุ (YYYY-MM-DD)
+            <div className="input-wrap"><input value={d.exp||''} onChange={e=>set('exp',e.target.value)} placeholder="2027-12-31"/></div>
+          </label>
+          <label className="lbl">Lot / เลข OD
+            <div className="input-wrap"><input value={d.lot||''} onChange={e=>set('lot',e.target.value)}/></div>
+          </label>
+        </div>
+        <div className="form-row">
+          <label className="lbl">บริษัทคู่ค้า / ผู้จำหน่าย
+            <div className="input-wrap"><Icon k="building" size={15}/><input value={d.supplier||''} onChange={e=>set('supplier',e.target.value)}/></div>
+          </label>
+          <label className="lbl">เบอร์โทรติดต่อ
+            <div className="input-wrap"><Icon k="phone" size={15}/><input value={d.tel||''} onChange={e=>set('tel',e.target.value)}/></div>
+          </label>
+        </div>
+        <div className="form-actions">
+          <button className="btn btn-ghost" onClick={onClose}>ยกเลิก</button>
+          <button className="btn btn-primary" disabled={!ok} onClick={()=>onSave(d)}><Icon k="check" size={14}/><span>บันทึกการแก้ไข</span></button>
         </div>
       </div>
     </ModalShell>
@@ -825,8 +899,10 @@ function ageBadge(years) {
   return { tone:'ok', text:'อยู่ในเกณฑ์' };
 }
 
-function EquipmentScreen({ equipment }) {
-  const [filter, setFilter] = useS('all');  // all | alert | ok
+function EquipmentScreen({ equipment, onAddEquipment, onEditEquipment, onDeleteEquipment }) {
+  const [filter, setFilter] = useS('all');
+  const [showAdd, setShowAdd] = useS(false);
+  const [editEq, setEditEq] = useS(null);
   const today = new Date();
 
   const enriched = equipment.map(e => {
@@ -850,7 +926,7 @@ function EquipmentScreen({ equipment }) {
         </div>
         <div className="page-head-actions">
           <button className="btn btn-ghost"><Icon k="download" size={16}/><span>ส่งออก</span></button>
-          <button className="btn btn-primary"><Icon k="plus" size={16}/><span>เพิ่มครุภัณฑ์</span></button>
+          <button className="btn btn-primary" onClick={()=>setShowAdd(true)}><Icon k="plus" size={16}/><span>เพิ่มครุภัณฑ์</span></button>
         </div>
       </div>
 
@@ -911,12 +987,112 @@ function EquipmentScreen({ equipment }) {
                     <span className="pill-dot"/>{e.badge.text}
                   </span>
                 </div>
+                <div className="td td-act">
+                  <button className="btn btn-mini btn-ghost" title="แก้ไข" onClick={()=>setEditEq(e)}>✏️</button>
+                  <button className="btn btn-mini btn-danger" title="ลบ" onClick={()=>{ if(window.confirm(`ลบ "${e.name}" ออกจากทะเบียน?`)) onDeleteEquipment(e.eq_no); }}>🗑️</button>
+                </div>
               </div>
             );
           })}
         </div>
       </section>
+
+      {showAdd && <AddEquipmentModal onClose={()=>setShowAdd(false)} onSave={(d)=>{ onAddEquipment(d); setShowAdd(false); }}/>}
+      {editEq && <EditEquipmentModal eq={editEq} onClose={()=>setEditEq(null)} onSave={(d)=>{ onEditEquipment(d); setEditEq(null); }}/>}
     </div>
+  );
+}
+
+/* ===== Equipment modals ===== */
+function AddEquipmentModal({ onClose, onSave }) {
+  const today = new Date();
+  const be = `${today.getFullYear()+543}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+  const [d, setD] = useS({ eq_no:'', name:'', received: be, cost:0, loc:'', cond:'ปกติ', note:'' });
+  function set(k,v){ setD(o=>({...o,[k]:v})); }
+  const ok = d.eq_no && d.name;
+  return (
+    <ModalShell title="เพิ่มครุภัณฑ์ใหม่" onClose={onClose} icon="plus">
+      <div className="form">
+        <div className="form-row">
+          <label className="lbl">เลขครุภัณฑ์ *
+            <div className="input-wrap"><input value={d.eq_no} onChange={e=>set('eq_no',e.target.value)} placeholder="EQ-2569-XXXX"/></div>
+          </label>
+          <label className="lbl">วันที่รับไว้
+            <div className="input-wrap"><input value={d.received} onChange={e=>set('received',e.target.value)} placeholder="2569-MM-DD"/></div>
+          </label>
+        </div>
+        <label className="lbl">ชื่อครุภัณฑ์ *
+          <div className="input-wrap"><input value={d.name} onChange={e=>set('name',e.target.value)} placeholder="เช่น Flexible Cystoscope"/></div>
+        </label>
+        <div className="form-row">
+          <label className="lbl">มูลค่า (บาท)
+            <div className="input-wrap"><input type="number" value={d.cost} onChange={e=>set('cost',Number(e.target.value))}/></div>
+          </label>
+          <label className="lbl">ที่ตั้ง
+            <div className="input-wrap"><input value={d.loc} onChange={e=>set('loc',e.target.value)} placeholder="ห้อง A-02"/></div>
+          </label>
+        </div>
+        <div className="form-row">
+          <label className="lbl">สภาพ
+            <div className="input-wrap"><select value={d.cond} onChange={e=>set('cond',e.target.value)} className="bare-select">
+              {['ปกติ','ชำรุด','ซ่อมบำรุง','รอจำหน่าย'].map(c=><option key={c}>{c}</option>)}
+            </select></div>
+          </label>
+          <label className="lbl">หมายเหตุ
+            <div className="input-wrap"><input value={d.note} onChange={e=>set('note',e.target.value)}/></div>
+          </label>
+        </div>
+        <div className="form-actions">
+          <button className="btn btn-ghost" onClick={onClose}>ยกเลิก</button>
+          <button className="btn btn-primary" disabled={!ok} onClick={()=>onSave(d)}><Icon k="check" size={14}/><span>บันทึก</span></button>
+        </div>
+      </div>
+    </ModalShell>
+  );
+}
+
+function EditEquipmentModal({ eq, onClose, onSave }) {
+  const [d, setD] = useS({ ...eq });
+  function set(k,v){ setD(o=>({...o,[k]:v})); }
+  const ok = d.eq_no && d.name;
+  return (
+    <ModalShell title="แก้ไขครุภัณฑ์" onClose={onClose} icon="edit">
+      <div className="form">
+        <div className="form-row">
+          <label className="lbl">เลขครุภัณฑ์ *
+            <div className="input-wrap"><input value={d.eq_no} onChange={e=>set('eq_no',e.target.value)}/></div>
+          </label>
+          <label className="lbl">วันที่รับไว้
+            <div className="input-wrap"><input value={d.received||''} onChange={e=>set('received',e.target.value)}/></div>
+          </label>
+        </div>
+        <label className="lbl">ชื่อครุภัณฑ์ *
+          <div className="input-wrap"><input value={d.name} onChange={e=>set('name',e.target.value)}/></div>
+        </label>
+        <div className="form-row">
+          <label className="lbl">มูลค่า (บาท)
+            <div className="input-wrap"><input type="number" value={d.cost||0} onChange={e=>set('cost',Number(e.target.value))}/></div>
+          </label>
+          <label className="lbl">ที่ตั้ง
+            <div className="input-wrap"><input value={d.loc||''} onChange={e=>set('loc',e.target.value)}/></div>
+          </label>
+        </div>
+        <div className="form-row">
+          <label className="lbl">สภาพ
+            <div className="input-wrap"><select value={d.cond||'ปกติ'} onChange={e=>set('cond',e.target.value)} className="bare-select">
+              {['ปกติ','ชำรุด','ซ่อมบำรุง','รอจำหน่าย'].map(c=><option key={c}>{c}</option>)}
+            </select></div>
+          </label>
+          <label className="lbl">หมายเหตุ
+            <div className="input-wrap"><input value={d.note||''} onChange={e=>set('note',e.target.value)}/></div>
+          </label>
+        </div>
+        <div className="form-actions">
+          <button className="btn btn-ghost" onClick={onClose}>ยกเลิก</button>
+          <button className="btn btn-primary" disabled={!ok} onClick={()=>onSave(d)}><Icon k="check" size={14}/><span>บันทึกการแก้ไข</span></button>
+        </div>
+      </div>
+    </ModalShell>
   );
 }
 
@@ -931,6 +1107,7 @@ function poWaitDays(date_ordered, received_date) {
 
 function POScreen({ pos = [], onChange }) {
   const [showAdd, setShowAdd] = useS(false);
+  const [editPO, setEditPO] = useS(null);
   const [now, setNow] = useS(Date.now());
 
   // Real-time tick every 30s (visual cue for "live")
@@ -1039,6 +1216,8 @@ function POScreen({ pos = [], onChange }) {
                 {p.status === 'RECEIVED' && (
                   <span className="muted sm">รับเมื่อ {p.received_date}</span>
                 )}
+                <button className="btn btn-mini btn-ghost" title="แก้ไข" onClick={()=>setEditPO(p)}>✏️</button>
+                <button className="btn btn-mini btn-danger" title="ลบ" onClick={()=>{ if(window.confirm(`ลบ OD "${p.od_no}" ออก?`)) onChange(pos.filter(x=>x.od_no!==p.od_no)); }}>🗑️</button>
               </div>
             </li>
           ))}
@@ -1046,6 +1225,7 @@ function POScreen({ pos = [], onChange }) {
       </section>
 
       {showAdd && <AddPOModal onClose={()=>setShowAdd(false)} onSave={(d)=>{ addPO(d); setShowAdd(false); }}/>}
+      {editPO && <EditPOModal po={editPO} onClose={()=>setEditPO(null)} onSave={(d)=>{ onChange(pos.map(p=>p.od_no===d.od_no?d:p)); setEditPO(null); }}/>}
     </div>
   );
 }
@@ -1081,6 +1261,49 @@ function AddPOModal({ onClose, onSave }) {
         <div className="form-actions">
           <button className="btn btn-ghost" onClick={onClose}>ยกเลิก</button>
           <button className="btn btn-primary" disabled={!ok} onClick={()=>onSave(d)}><Icon k="check" size={14}/><span>บันทึก OD</span></button>
+        </div>
+      </div>
+    </ModalShell>
+  );
+}
+
+/* ===== Edit PO modal ===== */
+function EditPOModal({ po, onClose, onSave }) {
+  const [d, setD] = useS({ ...po });
+  function set(k,v){ setD(o=>({...o,[k]:v})); }
+  const ok = d.od_no && d.items && d.vendor;
+  return (
+    <ModalShell title="แก้ไขใบสั่งซื้อ (OD)" onClose={onClose} icon="edit">
+      <div className="form">
+        <div className="form-row">
+          <label className="lbl">เลข OD *
+            <div className="input-wrap"><input value={d.od_no} onChange={e=>set('od_no',e.target.value)}/></div>
+          </label>
+          <label className="lbl">วันที่สั่งซื้อ
+            <div className="input-wrap"><input value={d.date_ordered||''} onChange={e=>set('date_ordered',e.target.value)}/></div>
+          </label>
+        </div>
+        <label className="lbl">รายการพัสดุ *
+          <div className="input-wrap"><input value={d.items} onChange={e=>set('items',e.target.value)}/></div>
+        </label>
+        <div className="form-row">
+          <label className="lbl">ผู้จำหน่าย *
+            <div className="input-wrap"><input value={d.vendor} onChange={e=>set('vendor',e.target.value)}/></div>
+          </label>
+          <label className="lbl">คาดว่าจะได้รับใน (วัน)
+            <div className="input-wrap"><input type="number" value={d.est_days||30} onChange={e=>set('est_days',Number(e.target.value))}/></div>
+          </label>
+        </div>
+        <label className="lbl">สถานะ
+          <div className="input-wrap"><select value={d.status||'PENDING'} onChange={e=>set('status',e.target.value)} className="bare-select">
+            <option value="PENDING">รอจัดส่ง</option>
+            <option value="SHIPPED">อยู่ระหว่างขนส่ง</option>
+            <option value="RECEIVED">รับของแล้ว</option>
+          </select></div>
+        </label>
+        <div className="form-actions">
+          <button className="btn btn-ghost" onClick={onClose}>ยกเลิก</button>
+          <button className="btn btn-primary" disabled={!ok} onClick={()=>onSave(d)}><Icon k="check" size={14}/><span>บันทึกการแก้ไข</span></button>
         </div>
       </div>
     </ModalShell>

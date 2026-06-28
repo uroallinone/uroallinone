@@ -246,9 +246,29 @@ function App() {
   }
 
   function addItem(d) {
-    const it = { ...d, lot:'—', exp:'—' };
+    const it = { ...d, lot: d.lot||'—', exp: d.exp||'—' };
     setItems(arr => [it, ...arr]);
     showToast(`เพิ่ม "${d.name}" เข้าคลังแล้ว`);
+  }
+  function editItem(d) {
+    setItems(arr => arr.map(i => i.code === d.code ? { ...i, ...d } : i));
+    showToast(`แก้ไข "${d.name}" เรียบร้อย`);
+  }
+  function deleteItem(code) {
+    setItems(arr => arr.filter(i => i.code !== code));
+    showToast('ลบรายการออกจากคลังแล้ว');
+  }
+  function addEquipment(d) {
+    setEquipment(arr => [{ ...d }, ...arr]);
+    showToast(`เพิ่มครุภัณฑ์ "${d.name}" เรียบร้อย`);
+  }
+  function editEquipment(d) {
+    setEquipment(arr => arr.map(e => e.eq_no === d.eq_no ? { ...e, ...d } : e));
+    showToast(`แก้ไขครุภัณฑ์ "${d.name}" เรียบร้อย`);
+  }
+  function deleteEquipment(eq_no) {
+    setEquipment(arr => arr.filter(e => e.eq_no !== eq_no));
+    showToast('ลบครุภัณฑ์ออกจากทะเบียนแล้ว');
   }
   function importItems(rows) {
     setItems(arr => {
@@ -278,9 +298,10 @@ function App() {
       case 'items':
         return <ItemsScreen items={items} cats={URO_CATEGORIES} query={query}
                             onCount={adjust} onStockIn={c=>go('stockin',c)} onStockOut={c=>go('stockout',c)}
-                            onAdd={addItem} onImport={importItems}/>;
+                            onAdd={addItem} onEdit={editItem} onDelete={deleteItem} onImport={importItems}/>;
       case 'equipment':
-        return <EquipmentScreen equipment={equipment}/>;
+        return <EquipmentScreen equipment={equipment}
+                            onAddEquipment={addEquipment} onEditEquipment={editEquipment} onDeleteEquipment={deleteEquipment}/>;
       case 'remaining':
         return <RemainingScreen items={items} cats={URO_CATEGORIES} onStockIn={c=>go('stockin',c)}/>;
       case 'po':
