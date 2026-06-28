@@ -420,30 +420,80 @@ function LoginScreen({ onLogin, loading, error }) {
     onLogin(uname.trim(), pass);
   }
   return (
-    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100vh', background:'var(--bg)' }}>
-      <form onSubmit={submit} style={{ width:'320px', padding:'36px 28px', background:'var(--surface)', borderRadius:'var(--radius)', boxShadow:'0 4px 24px rgba(0,0,0,.12)', display:'flex', flexDirection:'column', gap:'12px' }}>
-        <div style={{ textAlign:'center', marginBottom:'4px' }}>
-          <LogoMark size={44}/>
-          <div style={{ marginTop:'10px', fontSize:'17px', fontWeight:700, color:'var(--ink-1)' }}>Uro All Around</div>
-          <div style={{ marginTop:'3px', fontSize:'12px', color:'var(--ink-3)' }}>ระบบจัดการพัสดุแผนกผ่าตัด Uro</div>
-        </div>
-        <div className="field">
-          <label className="label">ชื่อผู้ใช้</label>
-          <input className="input" value={uname} onChange={e=>setUname(e.target.value)} autoFocus autoComplete="username" placeholder="เช่น Baheang"/>
-        </div>
-        <div className="field">
-          <label className="label">รหัสผ่าน</label>
-          <input className="input" type="password" value={pass} onChange={e=>setPass(e.target.value)} autoComplete="current-password"/>
-        </div>
-        {error && (
-          <div style={{ padding:'8px 12px', background:'#fef2f2', color:'#dc2626', borderRadius:'6px', fontSize:'13px' }}>
-            {error}
+    <div style={{
+      minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center',
+      background:'linear-gradient(135deg, #0a2847 0%, #0F3D6E 60%, #1a5fa8 100%)',
+      padding:'20px',
+    }}>
+      <div style={{
+        width:'100%', maxWidth:'400px',
+        background:'#fff', borderRadius:'20px',
+        boxShadow:'0 24px 80px rgba(0,0,0,.35)',
+        overflow:'hidden',
+      }}>
+        {/* Brand header */}
+        <div style={{ padding:'36px 32px 28px', textAlign:'center', borderBottom:'1px solid #f0f2f8' }}>
+          <LogoMark size={56}/>
+          <div style={{ marginTop:'16px', fontSize:'22px', fontWeight:700, color:'#0F172A', letterSpacing:'-0.4px' }}>
+            Uro All Around
           </div>
-        )}
-        <button className="btn btn-primary" type="submit" disabled={loading || !uname.trim() || !pass}>
-          {loading ? 'กำลังเข้าสู่ระบบ…' : 'เข้าสู่ระบบ'}
-        </button>
-      </form>
+          <div style={{ marginTop:'5px', fontSize:'13px', color:'#64748B' }}>
+            ระบบจัดการพัสดุ · แผนกผ่าตัด Uro
+          </div>
+        </div>
+
+        {/* Form */}
+        <form onSubmit={submit} style={{ padding:'28px 32px 32px' }}>
+          <div style={{ marginBottom:'20px', fontSize:'15px', fontWeight:600, color:'#1F2937' }}>
+            เข้าสู่ระบบ
+          </div>
+
+          <div className="lbl" style={{ marginBottom:'14px' }}>
+            ชื่อผู้ใช้
+            <div className="input-wrap">
+              <Icon k="user" size={15}/>
+              <input
+                value={uname} onChange={e=>setUname(e.target.value)}
+                autoFocus autoComplete="username" placeholder="เช่น Baheang"
+              />
+            </div>
+          </div>
+
+          <div className="lbl" style={{ marginBottom:'20px' }}>
+            รหัสผ่าน
+            <div className="input-wrap">
+              <Icon k="lock" size={15}/>
+              <input
+                type="password" value={pass} onChange={e=>setPass(e.target.value)}
+                autoComplete="current-password" placeholder="••••••••"
+              />
+            </div>
+          </div>
+
+          {error && (
+            <div style={{
+              marginBottom:'16px', padding:'10px 14px', borderRadius:'10px',
+              background:'#fef2f2', color:'#dc2626', fontSize:'13px',
+              display:'flex', alignItems:'center', gap:'8px', border:'1px solid #fecaca',
+            }}>
+              <Icon k="alert" size={15}/>
+              <span>{error}</span>
+            </div>
+          )}
+
+          <button
+            className="btn btn-primary" type="submit"
+            disabled={loading || !uname.trim() || !pass}
+            style={{ width:'100%', justifyContent:'center', padding:'12px 16px', fontSize:'15px', borderRadius:'12px' }}
+          >
+            {loading ? 'กำลังเข้าสู่ระบบ…' : 'เข้าสู่ระบบ'}
+          </button>
+
+          <div style={{ marginTop:'20px', textAlign:'center', fontSize:'12px', color:'#94A3B8' }}>
+            ติดต่อผู้ดูแลระบบเพื่อขอรหัสผ่าน
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
