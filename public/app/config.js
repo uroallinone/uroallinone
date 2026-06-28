@@ -10,4 +10,4 @@
    ความปลอดภัยของข้อมูลคุมด้วย Row Level Security (ดู supabase-setup.sql)
 ============================================================ */
 window.SUPABASE_URL = 'https://mwafupfncuzckdfvvjw.supabase.co';
-window.SUPABASE_ANON_KEY = 'sb_publishable_9fE5nB4iRc7G6ykVA1UULA_UQnBEJlQ';
+window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13YWZ1cGZuY3VjemNrZGZ2dmp3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI1NjAyMTksImV4cCI6MjA5ODEzNjIxOX0.uYLxIY6Hx2RsTCIloeyWPBL9-_bGKwoiulxAFxX-f4Q';
