@@ -175,7 +175,7 @@ function App() {
     setLoginLoading(true);
     setLoginError('');
     try {
-      const u = await UroAuth.signIn(username.toLowerCase() + '@uroallinone.app', password);
+      const u = await UroAuth.signIn(username, password);
       setUser(u);
     } catch(e) {
       setLoginError(e.message || 'เข้าสู่ระบบไม่สำเร็จ');

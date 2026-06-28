@@ -24,61 +24,35 @@
     });
   }
 
-  /* ---------------- auth ---------------- */
-  function initialsOf(s) {
-    s = String(s || '').trim();
-    if (!s) return 'U';
-    const p = s.split(/[\s@._-]+/).filter(Boolean);
-    const r = ((p[0] && p[0][0]) || '') + ((p[1] && p[1][0]) || '');
-    return (r || s[0]).toUpperCase();
-  }
-  function mapUser(u) {
-    if (!u) return null;
-    const name = (u.user_metadata && u.user_metadata.name) || u.email || 'ผู้ใช้';
-    const role = (u.user_metadata && u.user_metadata.role) || 'editor';
-    return { id: u.id, email: u.email, name, role, initials: initialsOf(name) };
-  }
-
+  /* ---------------- local auth (credentials from config.js) ---------------- */
   const UroAuth = {
-    configured: !!client,
+    configured: !!(window.URO_USERS && window.URO_USERS.length),
     async getUser() {
-      if (!client) return null;
-      const { data } = await client.auth.getSession();
-      return data.session ? mapUser(data.session.user) : null;
+      try {
+        const s = sessionStorage.getItem('uro_session');
+        return s ? JSON.parse(s) : null;
+      } catch { return null; }
     },
-    onChange(fn) {
-      if (!client) return;
-      client.auth.onAuthStateChange((_event, session) => {
-        fn(session ? mapUser(session.user) : null);
-      });
+    onChange(fn) { /* session-based — no realtime push */ },
+    async signIn(username, password) {
+      const users = window.URO_USERS || [];
+      const found = users.find(u =>
+        u.username.toLowerCase() === String(username).toLowerCase() && u.password === password
+      );
+      if (!found) throw new Error('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
+      const profile = {
+        id: found.username,
+        name: found.name,
+        role: found.role,
+        initials: (found.name[0] || '?').toUpperCase(),
+      };
+      sessionStorage.setItem('uro_session', JSON.stringify(profile));
+      return profile;
     },
-    async signIn(email, password) {
-      if (!client) throw new Error('ยังไม่ได้ตั้งค่า Supabase (แก้ไฟล์ app/config.js)');
-      const { data, error } = await client.auth.signInWithPassword({ email, password });
-      if (error) throw new Error(translateAuthError(error.message));
-      return mapUser(data.user);
+    async signOut() {
+      sessionStorage.removeItem('uro_session');
     },
-    async signUp(email, password, name) {
-      if (!client) throw new Error('ยังไม่ได้ตั้งค่า Supabase (แก้ไฟล์ app/config.js)');
-      const { data, error } = await client.auth.signUp({
-        email, password, options: { data: { name: name || email } },
-      });
-      if (error) throw new Error(translateAuthError(error.message));
-      // If email confirmation is OFF, a session is returned and the user is logged in.
-      return { user: data.user ? mapUser(data.user) : null, needsConfirm: !data.session };
-    },
-    async signOut() { if (client) await client.auth.signOut(); },
   };
-
-  function translateAuthError(msg) {
-    msg = String(msg || '');
-    if (/Invalid login credentials/i.test(msg)) return 'อีเมลหรือรหัสผ่านไม่ถูกต้อง';
-    if (/already registered|already exists/i.test(msg)) return 'อีเมลนี้ถูกใช้สมัครแล้ว';
-    if (/Password should be at least/i.test(msg)) return 'รหัสผ่านสั้นเกินไป (อย่างน้อย 6 ตัวอักษร)';
-    if (/Email not confirmed/i.test(msg)) return 'ยังไม่ได้ยืนยันอีเมล — ตรวจสอบกล่องจดหมาย';
-    if (/valid email|invalid format/i.test(msg)) return 'รูปแบบอีเมลไม่ถูกต้อง';
-    return msg;
-  }
 
   /* ---------------- data sync ---------------- */
   const ROW_ID = 1;
