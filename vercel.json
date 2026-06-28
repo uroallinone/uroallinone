@@ -3,5 +3,19 @@
   "outputDirectory": "public",
   "buildCommand": null,
   "installCommand": null,
-  "framework": null
+  "framework": null,
+  "headers": [
+    {
+      "source": "/app/(.*)\\.jsx",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/app/(.*)\\.js",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+      ]
+    }
+  ]
 }
