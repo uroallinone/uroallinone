@@ -35,7 +35,8 @@
   function mapUser(u) {
     if (!u) return null;
     const name = (u.user_metadata && u.user_metadata.name) || u.email || 'ผู้ใช้';
-    return { id: u.id, email: u.email, name, role: 'ผู้ใช้', initials: initialsOf(name) };
+    const role = (u.user_metadata && u.user_metadata.role) || 'editor';
+    return { id: u.id, email: u.email, name, role, initials: initialsOf(name) };
   }
 
   const UroAuth = {

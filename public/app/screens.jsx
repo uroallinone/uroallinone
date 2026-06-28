@@ -180,7 +180,7 @@ function Dashboard({ items, txns, burn, month, year, cats, onGo, onStockIn, onSt
 }
 
 /* ===== Items list ===== */
-function ItemsScreen({ items, cats, query, onCount, onStockIn, onStockOut, onAdd, onEdit, onDelete, onImport }) {
+function ItemsScreen({ items, cats, query, canEdit, onCount, onStockIn, onStockOut, onAdd, onEdit, onDelete, onImport }) {
   const [cat, setCat] = useS('all');
   const [status, setStatus] = useS('all');
   const [showAdd, setShowAdd] = useS(false);
@@ -212,8 +212,8 @@ function ItemsScreen({ items, cats, query, onCount, onStockIn, onStockOut, onAdd
         </div>
         <div className="page-head-actions">
           <button className="btn btn-ghost"><Icon k="qr" size={16}/><span>สแกน QR</span></button>
-          <button className="btn btn-ghost" onClick={()=>setShowImport(true)}><Icon k="sheet" size={16}/><span>นำเข้าจาก Google Sheet</span></button>
-          <button className="btn btn-primary" onClick={()=>setShowAdd(true)}><Icon k="plus" size={16}/><span>เพิ่มรายการ</span></button>
+          {canEdit && <button className="btn btn-ghost" onClick={()=>setShowImport(true)}><Icon k="sheet" size={16}/><span>นำเข้าจาก Google Sheet</span></button>}
+          {canEdit && <button className="btn btn-primary" onClick={()=>setShowAdd(true)}><Icon k="plus" size={16}/><span>เพิ่มรายการ</span></button>}
         </div>
       </div>
 
@@ -240,7 +240,7 @@ function ItemsScreen({ items, cats, query, onCount, onStockIn, onStockOut, onAdd
           <div className="th th-num">คงเหลือ</div>
           <div className="th th-num">ขั้นต่ำ</div>
           <div className="th">สถานะ</div>
-          <div className="th">ปรับสต๊อก</div>
+          {canEdit && <div className="th">ปรับสต๊อก</div>}
         </div>
         <div className="tbody">
           {filtered.map(it => {
@@ -281,6 +281,7 @@ function ItemsScreen({ items, cats, query, onCount, onStockIn, onStockOut, onAdd
                   <div className="muted">{it.min} {it.unit}</div>
                 </div>
                 <div className="td td-st"><StatusPill s={s}/></div>
+                {canEdit && (
                 <div className="td td-act">
                   <button className="stepper" onClick={()=>onCount(it.code, -1)} aria-label="ลด"><Icon k="minus" size={14}/></button>
                   <button className="stepper" onClick={()=>onCount(it.code, +1)} aria-label="เพิ่ม"><Icon k="plus" size={14}/></button>
@@ -289,6 +290,7 @@ function ItemsScreen({ items, cats, query, onCount, onStockIn, onStockOut, onAdd
                   <button className="btn btn-mini btn-ghost" title="แก้ไข" onClick={()=>setEditItem(it)}>✏️</button>
                   <button className="btn btn-mini btn-danger" title="ลบ" onClick={()=>{ if(window.confirm(`ลบ "${it.name}" ออกจากคลัง?`)) onDelete(it.code); }}>🗑️</button>
                 </div>
+                )}
               </div>
             );
           })}
@@ -879,7 +881,7 @@ function ageBadge(years) {
   return { tone:'ok', text:'อยู่ในเกณฑ์' };
 }
 
-function EquipmentScreen({ equipment, onAddEquipment, onEditEquipment, onDeleteEquipment }) {
+function EquipmentScreen({ equipment, canEdit, onAddEquipment, onEditEquipment, onDeleteEquipment }) {
   const [filter, setFilter] = useS('all');
   const [showAdd, setShowAdd] = useS(false);
   const [editEq, setEditEq] = useS(null);
@@ -906,7 +908,7 @@ function EquipmentScreen({ equipment, onAddEquipment, onEditEquipment, onDeleteE
         </div>
         <div className="page-head-actions">
           <button className="btn btn-ghost"><Icon k="download" size={16}/><span>ส่งออก</span></button>
-          <button className="btn btn-primary" onClick={()=>setShowAdd(true)}><Icon k="plus" size={16}/><span>เพิ่มครุภัณฑ์</span></button>
+          {canEdit && <button className="btn btn-primary" onClick={()=>setShowAdd(true)}><Icon k="plus" size={16}/><span>เพิ่มครุภัณฑ์</span></button>}
         </div>
       </div>
 
@@ -967,10 +969,12 @@ function EquipmentScreen({ equipment, onAddEquipment, onEditEquipment, onDeleteE
                     <span className="pill-dot"/>{e.badge.text}
                   </span>
                 </div>
+                {canEdit && (
                 <div className="td td-act">
                   <button className="btn btn-mini btn-ghost" title="แก้ไข" onClick={()=>setEditEq(e)}>✏️</button>
                   <button className="btn btn-mini btn-danger" title="ลบ" onClick={()=>{ if(window.confirm(`ลบ "${e.name}" ออกจากทะเบียน?`)) onDeleteEquipment(e.eq_no); }}>🗑️</button>
                 </div>
+                )}
               </div>
             );
           })}
@@ -1075,7 +1079,7 @@ function poWaitDays(date_ordered, received_date) {
   return Math.floor((end - start) / (1000*60*60*24));
 }
 
-function POScreen({ pos = [], onChange }) {
+function POScreen({ pos = [], onChange, canEdit }) {
   const [showAdd, setShowAdd] = useS(false);
   const [editPO, setEditPO] = useS(null);
   const [now, setNow] = useS(Date.now());
@@ -1118,7 +1122,7 @@ function POScreen({ pos = [], onChange }) {
           </div>
         </div>
         <div className="page-head-actions">
-          <button className="btn btn-primary" onClick={()=>setShowAdd(true)}><Icon k="plus" size={16}/><span>เพิ่ม OD</span></button>
+          {canEdit && <button className="btn btn-primary" onClick={()=>setShowAdd(true)}><Icon k="plus" size={16}/><span>เพิ่ม OD</span></button>}
         </div>
       </div>
 
@@ -1178,7 +1182,7 @@ function POScreen({ pos = [], onChange }) {
                                  background: p.over180?'var(--bad)':p.ratio>1?'var(--warn)':'var(--ok)' }}/>
                   <span className="po-bar-180" style={{ left:`${Math.min(100, (180/Math.max(p.est_days,1))*100)}%` }} title="180 วัน"/>
                 </div>
-                {p.status !== 'RECEIVED' && (
+                {p.status !== 'RECEIVED' && canEdit && (
                   <button className="btn btn-mini btn-primary" onClick={()=>markReceived(p.od_no)}>
                     <Icon k="check" size={12}/><span>ยืนยันรับของ</span>
                   </button>
@@ -1186,8 +1190,8 @@ function POScreen({ pos = [], onChange }) {
                 {p.status === 'RECEIVED' && (
                   <span className="muted sm">รับเมื่อ {p.received_date}</span>
                 )}
-                <button className="btn btn-mini btn-ghost" title="แก้ไข" onClick={()=>setEditPO(p)}>✏️</button>
-                <button className="btn btn-mini btn-danger" title="ลบ" onClick={()=>{ if(window.confirm(`ลบ OD "${p.od_no}" ออก?`)) onChange(pos.filter(x=>x.od_no!==p.od_no)); }}>🗑️</button>
+                {canEdit && <button className="btn btn-mini btn-ghost" title="แก้ไข" onClick={()=>setEditPO(p)}>✏️</button>}
+                {canEdit && <button className="btn btn-mini btn-danger" title="ลบ" onClick={()=>{ if(window.confirm(`ลบ OD "${p.od_no}" ออก?`)) onChange(pos.filter(x=>x.od_no!==p.od_no)); }}>🗑️</button>}
               </div>
             </li>
           ))}

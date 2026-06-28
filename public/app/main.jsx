@@ -87,8 +87,10 @@ function App() {
   const setTweak = t[1] || (()=>{});
 
   const [route, setRoute] = useState_('dashboard');
-  // Public access — no login required. `user` is a dummy object for compatibility.
-  const [user] = useState_({ id: 'guest', email: 'guest@local', name: 'Guest' });
+  const [user, setUser] = useState_(null);
+  const [authChecked, setAuthChecked] = useState_(false);
+  const [loginLoading, setLoginLoading] = useState_(false);
+  const [loginError, setLoginError] = useState_('');
   const [query, setQuery] = useState_('');
   const [drawer, setDrawer] = useState_(false);
   // Start empty — no demo/mock data. Real data is entered by the user and
@@ -115,7 +117,13 @@ function App() {
   useEffect_(() => { savePersisted('equipment', equipment); }, [equipment]);
   useEffect_(() => { savePersisted('po', pos); }, [pos]);
 
-  // No auth required — public access
+  // Session check + auth state listener
+  useEffect_(() => {
+    const auth = (typeof UroAuth !== 'undefined') ? UroAuth : null;
+    if (!auth || !auth.configured) { setAuthChecked(true); return; }
+    auth.getUser().then(u => { setUser(u || null); setAuthChecked(true); });
+    auth.onChange(u => setUser(u || null));
+  }, []);
 
   // Register the central-database listeners once, on mount
   useEffect_(() => {
@@ -158,8 +166,25 @@ function App() {
   }, [tweaks]);
 
   async function logout() {
+    if (typeof UroAuth !== 'undefined') await UroAuth.signOut();
+    setUser(null);
     setRoute('dashboard');
   }
+
+  async function handleLogin(username, password) {
+    setLoginLoading(true);
+    setLoginError('');
+    try {
+      const u = await UroAuth.signIn(username.toLowerCase() + '@uroallinone.app', password);
+      setUser(u);
+    } catch(e) {
+      setLoginError(e.message || 'เข้าสู่ระบบไม่สำเร็จ');
+    } finally {
+      setLoginLoading(false);
+    }
+  }
+
+  const canEdit = !!(user && user.role !== 'viewer');
 
   function showToast(msg, tone='ok') {
     setToast({ msg, tone });
@@ -296,16 +321,16 @@ function App() {
                           cats={URO_CATEGORIES}
                           onGo={go} onStockIn={c=>go('stockin',c)} onStockOut={c=>go('stockout',c)}/>;
       case 'items':
-        return <ItemsScreen items={items} cats={URO_CATEGORIES} query={query}
+        return <ItemsScreen items={items} cats={URO_CATEGORIES} query={query} canEdit={canEdit}
                             onCount={adjust} onStockIn={c=>go('stockin',c)} onStockOut={c=>go('stockout',c)}
                             onAdd={addItem} onEdit={editItem} onDelete={deleteItem} onImport={importItems}/>;
       case 'equipment':
-        return <EquipmentScreen equipment={equipment}
+        return <EquipmentScreen equipment={equipment} canEdit={canEdit}
                             onAddEquipment={addEquipment} onEditEquipment={editEquipment} onDeleteEquipment={deleteEquipment}/>;
       case 'remaining':
         return <RemainingScreen items={items} cats={URO_CATEGORIES} onStockIn={c=>go('stockin',c)}/>;
       case 'po':
-        return <POScreen pos={pos} onChange={setPos}/>;
+        return <POScreen pos={pos} onChange={setPos} canEdit={canEdit}/>;
       case 'stockin':
         return <StockMoveScreen kind="IN" items={items} cats={URO_CATEGORIES} user={user}
                                 prefill={prefillCode} onSubmit={b=>commitBatch('IN', b)}/>;
@@ -317,6 +342,16 @@ function App() {
       default: return null;
     }
   })();
+
+  if (!authChecked) return (
+    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100vh', background:'var(--bg)' }}>
+      <span style={{ color:'var(--ink-3)', fontSize:'14px' }}>กำลังโหลด…</span>
+    </div>
+  );
+
+  if (!user) return (
+    <LoginScreen onLogin={handleLogin} loading={loginLoading} error={loginError}/>
+  );
 
   return (
     <div className="app" data-screen-label={`Screen / ${NAV.find(n=>n.id===route)?.label || route}`}>
@@ -373,6 +408,43 @@ function TweakControls({ tweaks, setTweak, onStartFresh, onRestoreSample }) {
         )}
       </TweakSection>
     </TweaksPanel>
+  );
+}
+
+function LoginScreen({ onLogin, loading, error }) {
+  const [uname, setUname] = useState_('');
+  const [pass, setPass] = useState_('');
+  function submit(e) {
+    e.preventDefault();
+    if (!uname.trim() || !pass) return;
+    onLogin(uname.trim(), pass);
+  }
+  return (
+    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100vh', background:'var(--bg)' }}>
+      <form onSubmit={submit} style={{ width:'320px', padding:'36px 28px', background:'var(--surface)', borderRadius:'var(--radius)', boxShadow:'0 4px 24px rgba(0,0,0,.12)', display:'flex', flexDirection:'column', gap:'12px' }}>
+        <div style={{ textAlign:'center', marginBottom:'4px' }}>
+          <LogoMark size={44}/>
+          <div style={{ marginTop:'10px', fontSize:'17px', fontWeight:700, color:'var(--ink-1)' }}>Uro All Around</div>
+          <div style={{ marginTop:'3px', fontSize:'12px', color:'var(--ink-3)' }}>ระบบจัดการพัสดุแผนกผ่าตัด Uro</div>
+        </div>
+        <div className="field">
+          <label className="label">ชื่อผู้ใช้</label>
+          <input className="input" value={uname} onChange={e=>setUname(e.target.value)} autoFocus autoComplete="username" placeholder="เช่น Baheang"/>
+        </div>
+        <div className="field">
+          <label className="label">รหัสผ่าน</label>
+          <input className="input" type="password" value={pass} onChange={e=>setPass(e.target.value)} autoComplete="current-password"/>
+        </div>
+        {error && (
+          <div style={{ padding:'8px 12px', background:'#fef2f2', color:'#dc2626', borderRadius:'6px', fontSize:'13px' }}>
+            {error}
+          </div>
+        )}
+        <button className="btn btn-primary" type="submit" disabled={loading || !uname.trim() || !pass}>
+          {loading ? 'กำลังเข้าสู่ระบบ…' : 'เข้าสู่ระบบ'}
+        </button>
+      </form>
+    </div>
   );
 }
 
