@@ -313,20 +313,15 @@ function ItemsScreen({ items, cats, query, onCount, onStockIn, onStockOut, onAdd
 
 /* ===== Add item modal ===== */
 function AddItemModal({ cats, onClose, onSave }) {
-  const [d, setD] = useS({ ipiss:'', code:'', name:'', cat:'cath', unit:'ชิ้น', qty:0, min:0, price:0, loc:'', supplier:'', tel:'' });
+  const [d, setD] = useS({ ipiss:'', name:'', cat:'cath', unit:'ชิ้น', qty:0, min:0, price:0, supplier:'', tel:'' });
   function set(k, v) { setD(o => ({ ...o, [k]: v })); }
-  const ok = d.ipiss && d.name && d.code;
+  const ok = d.ipiss && d.name;
   return (
     <ModalShell title="เพิ่มรายการพัสดุใหม่" onClose={onClose} icon="plus">
       <div className="form">
-        <div className="form-row">
-          <label className="lbl">เลข IPISS *
-            <div className="input-wrap"><input value={d.ipiss} onChange={e=>set('ipiss',e.target.value)} placeholder="7110-XXX-XXXX/2569"/></div>
-          </label>
-          <label className="lbl">รหัสภายใน *
-            <div className="input-wrap"><input value={d.code} onChange={e=>set('code',e.target.value)} placeholder="URO-XX-XXX"/></div>
-          </label>
-        </div>
+        <label className="lbl">เลข IPISS *
+          <div className="input-wrap"><input value={d.ipiss} onChange={e=>set('ipiss',e.target.value)} placeholder="7110-XXX-XXXX/2569"/></div>
+        </label>
         <label className="lbl">ชื่อพัสดุ *
           <div className="input-wrap"><input value={d.name} onChange={e=>set('name',e.target.value)} placeholder="เช่น Foley 2-way 16 Fr"/></div>
         </label>
@@ -348,14 +343,9 @@ function AddItemModal({ cats, onClose, onSave }) {
             <div className="input-wrap"><input type="number" value={d.min} onChange={e=>set('min',Number(e.target.value))}/></div>
           </label>
         </div>
-        <div className="form-row">
-          <label className="lbl">ราคา/หน่วย (บาท)
-            <div className="input-wrap"><input type="number" value={d.price} onChange={e=>set('price',Number(e.target.value))}/></div>
-          </label>
-          <label className="lbl">ที่เก็บ
-            <div className="input-wrap"><input value={d.loc} onChange={e=>set('loc',e.target.value)} placeholder="เช่น A-01"/></div>
-          </label>
-        </div>
+        <label className="lbl">ราคา/หน่วย (บาท)
+          <div className="input-wrap"><input type="number" value={d.price} onChange={e=>set('price',Number(e.target.value))}/></div>
+        </label>
         <div className="form-row">
           <label className="lbl">บริษัทคู่ค้า / ผู้จำหน่าย
             <div className="input-wrap"><Icon k="building" size={15}/><input value={d.supplier} onChange={e=>set('supplier',e.target.value)} placeholder="เช่น Bard, Olympus"/></div>
@@ -366,7 +356,7 @@ function AddItemModal({ cats, onClose, onSave }) {
         </div>
         <div className="form-actions">
           <button className="btn btn-ghost" onClick={onClose}>ยกเลิก</button>
-          <button className="btn btn-primary" disabled={!ok} onClick={()=>onSave(d)}><Icon k="check" size={14}/><span>บันทึก</span></button>
+          <button className="btn btn-primary" disabled={!ok} onClick={()=>onSave({ ...d, code: 'URO-' + Date.now(), loc: '' })}><Icon k="check" size={14}/><span>บันทึก</span></button>
         </div>
       </div>
     </ModalShell>
@@ -377,18 +367,13 @@ function AddItemModal({ cats, onClose, onSave }) {
 function EditItemModal({ cats, item, onClose, onSave }) {
   const [d, setD] = useS({ ...item });
   function set(k, v) { setD(o => ({ ...o, [k]: v })); }
-  const ok = d.ipiss && d.name && d.code;
+  const ok = d.ipiss && d.name;
   return (
     <ModalShell title="แก้ไขรายการพัสดุ" onClose={onClose} icon="edit">
       <div className="form">
-        <div className="form-row">
-          <label className="lbl">เลข IPISS *
-            <div className="input-wrap"><input value={d.ipiss} onChange={e=>set('ipiss',e.target.value)}/></div>
-          </label>
-          <label className="lbl">รหัสภายใน *
-            <div className="input-wrap"><input value={d.code} onChange={e=>set('code',e.target.value)}/></div>
-          </label>
-        </div>
+        <label className="lbl">เลข IPISS *
+          <div className="input-wrap"><input value={d.ipiss} onChange={e=>set('ipiss',e.target.value)}/></div>
+        </label>
         <label className="lbl">ชื่อพัสดุ *
           <div className="input-wrap"><input value={d.name} onChange={e=>set('name',e.target.value)}/></div>
         </label>
@@ -410,14 +395,9 @@ function EditItemModal({ cats, item, onClose, onSave }) {
             <div className="input-wrap"><input type="number" value={d.min} onChange={e=>set('min',Number(e.target.value))}/></div>
           </label>
         </div>
-        <div className="form-row">
-          <label className="lbl">ราคา/หน่วย (บาท)
-            <div className="input-wrap"><input type="number" value={d.price||0} onChange={e=>set('price',Number(e.target.value))}/></div>
-          </label>
-          <label className="lbl">ที่เก็บ
-            <div className="input-wrap"><input value={d.loc||''} onChange={e=>set('loc',e.target.value)}/></div>
-          </label>
-        </div>
+        <label className="lbl">ราคา/หน่วย (บาท)
+          <div className="input-wrap"><input type="number" value={d.price||0} onChange={e=>set('price',Number(e.target.value))}/></div>
+        </label>
         <div className="form-row">
           <label className="lbl">วันหมดอายุ (YYYY-MM-DD)
             <div className="input-wrap"><input value={d.exp||''} onChange={e=>set('exp',e.target.value)} placeholder="2027-12-31"/></div>
@@ -1007,7 +987,7 @@ function EquipmentScreen({ equipment, onAddEquipment, onEditEquipment, onDeleteE
 function AddEquipmentModal({ onClose, onSave }) {
   const today = new Date();
   const be = `${today.getFullYear()+543}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
-  const [d, setD] = useS({ eq_no:'', name:'', received: be, cost:0, loc:'', cond:'ปกติ', note:'' });
+  const [d, setD] = useS({ eq_no:'', name:'', received: be, cost:0, cond:'ปกติ', note:'' });
   function set(k,v){ setD(o=>({...o,[k]:v})); }
   const ok = d.eq_no && d.name;
   return (
@@ -1024,14 +1004,9 @@ function AddEquipmentModal({ onClose, onSave }) {
         <label className="lbl">ชื่อครุภัณฑ์ *
           <div className="input-wrap"><input value={d.name} onChange={e=>set('name',e.target.value)} placeholder="เช่น Flexible Cystoscope"/></div>
         </label>
-        <div className="form-row">
-          <label className="lbl">มูลค่า (บาท)
-            <div className="input-wrap"><input type="number" value={d.cost} onChange={e=>set('cost',Number(e.target.value))}/></div>
-          </label>
-          <label className="lbl">ที่ตั้ง
-            <div className="input-wrap"><input value={d.loc} onChange={e=>set('loc',e.target.value)} placeholder="ห้อง A-02"/></div>
-          </label>
-        </div>
+        <label className="lbl">มูลค่า (บาท)
+          <div className="input-wrap"><input type="number" value={d.cost} onChange={e=>set('cost',Number(e.target.value))}/></div>
+        </label>
         <div className="form-row">
           <label className="lbl">สภาพ
             <div className="input-wrap"><select value={d.cond} onChange={e=>set('cond',e.target.value)} className="bare-select">
@@ -1044,7 +1019,7 @@ function AddEquipmentModal({ onClose, onSave }) {
         </div>
         <div className="form-actions">
           <button className="btn btn-ghost" onClick={onClose}>ยกเลิก</button>
-          <button className="btn btn-primary" disabled={!ok} onClick={()=>onSave(d)}><Icon k="check" size={14}/><span>บันทึก</span></button>
+          <button className="btn btn-primary" disabled={!ok} onClick={()=>onSave({ ...d, loc: '' })}><Icon k="check" size={14}/><span>บันทึก</span></button>
         </div>
       </div>
     </ModalShell>
@@ -1069,14 +1044,9 @@ function EditEquipmentModal({ eq, onClose, onSave }) {
         <label className="lbl">ชื่อครุภัณฑ์ *
           <div className="input-wrap"><input value={d.name} onChange={e=>set('name',e.target.value)}/></div>
         </label>
-        <div className="form-row">
-          <label className="lbl">มูลค่า (บาท)
-            <div className="input-wrap"><input type="number" value={d.cost||0} onChange={e=>set('cost',Number(e.target.value))}/></div>
-          </label>
-          <label className="lbl">ที่ตั้ง
-            <div className="input-wrap"><input value={d.loc||''} onChange={e=>set('loc',e.target.value)}/></div>
-          </label>
-        </div>
+        <label className="lbl">มูลค่า (บาท)
+          <div className="input-wrap"><input type="number" value={d.cost||0} onChange={e=>set('cost',Number(e.target.value))}/></div>
+        </label>
         <div className="form-row">
           <label className="lbl">สภาพ
             <div className="input-wrap"><select value={d.cond||'ปกติ'} onChange={e=>set('cond',e.target.value)} className="bare-select">
