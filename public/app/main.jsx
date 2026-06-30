@@ -330,7 +330,7 @@ function App() {
       case 'remaining':
         return <RemainingScreen items={items} cats={URO_CATEGORIES} onStockIn={c=>go('stockin',c)}/>;
       case 'po':
-        return <POScreen pos={pos} onChange={setPos} canEdit={canEdit}/>;
+        return <POScreen pos={pos} onChange={setPos} canEdit={canEdit} items={items}/>;
       case 'stockin':
         return <StockMoveScreen kind="IN" items={items} cats={URO_CATEGORIES} user={user}
                                 prefill={prefillCode} onSubmit={b=>commitBatch('IN', b)}/>;

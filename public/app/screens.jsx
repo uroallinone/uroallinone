@@ -1079,7 +1079,7 @@ function poWaitDays(date_ordered, received_date) {
   return Math.floor((end - start) / (1000*60*60*24));
 }
 
-function POScreen({ pos = [], onChange, canEdit }) {
+function POScreen({ pos = [], onChange, canEdit, items = [] }) {
   const [showAdd, setShowAdd] = useS(false);
   const [editPO, setEditPO] = useS(null);
   const [now, setNow] = useS(Date.now());
@@ -1198,17 +1198,195 @@ function POScreen({ pos = [], onChange, canEdit }) {
         </ul>
       </section>
 
-      {showAdd && <AddPOModal onClose={()=>setShowAdd(false)} onSave={(d)=>{ addPO(d); setShowAdd(false); }}/>}
-      {editPO && <EditPOModal po={editPO} onClose={()=>setEditPO(null)} onSave={(d)=>{ onChange(pos.map(p=>p.od_no===d.od_no?d:p)); setEditPO(null); }}/>}
+      {showAdd && <AddPOModal items={items} onClose={()=>setShowAdd(false)} onSave={(d)=>{ addPO(d); setShowAdd(false); }}/>}
+      {editPO && <EditPOModal items={items} po={editPO} onClose={()=>setEditPO(null)} onSave={(d)=>{ onChange(pos.map(p=>p.od_no===d.od_no?d:p)); setEditPO(null); }}/>}
     </div>
   );
 }
 
-function AddPOModal({ onClose, onSave }) {
+/* ===== Thai (BE) date picker + searchable item combobox ===== */
+const THAI_MONTHS_FULL = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+const THAI_DAYS_SHORT = ['อา','จ','อ','พ','พฤ','ศ','ส'];
+
+function parseBEDate(s) {
+  const m = s && String(s).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (m) return { y: Number(m[1]), m: Number(m[2])-1, d: Number(m[3]) };
+  const t = new Date();
+  return { y: t.getFullYear()+543, m: t.getMonth(), d: t.getDate() };
+}
+function formatBEDate(s) {
+  const p = parseBEDate(s);
+  return `${p.d} ${THAI_MONTHS_FULL[p.m]} ${p.y}`;
+}
+function toBEString(y, m, d) {
+  return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+}
+
+// Tracks a trigger element's screen position so a portal-rendered popover
+// can follow it (modals use overflow:hidden, so absolute positioning would clip).
+function useAnchoredPopover(open, triggerRef) {
+  const [rect, setRect] = useS(null);
+  useE(() => {
+    if (!open) { setRect(null); return; }
+    function update() { if (triggerRef.current) setRect(triggerRef.current.getBoundingClientRect()); }
+    update();
+    window.addEventListener('scroll', update, true);
+    window.addEventListener('resize', update);
+    return () => { window.removeEventListener('scroll', update, true); window.removeEventListener('resize', update); };
+  }, [open]);
+  return rect;
+}
+
+function ThaiDatePicker({ value, onChange }) {
+  const [open, setOpen] = useS(false);
+  const triggerRef = useR(null);
+  const popRef = useR(null);
+  const rect = useAnchoredPopover(open, triggerRef);
+  const init = parseBEDate(value);
+  const [viewY, setViewY] = useS(init.y);
+  const [viewM, setViewM] = useS(init.m);
+
+  useE(() => {
+    function onDoc(e) {
+      if (triggerRef.current && triggerRef.current.contains(e.target)) return;
+      if (popRef.current && popRef.current.contains(e.target)) return;
+      setOpen(false);
+    }
+    document.addEventListener('mousedown', onDoc);
+    return () => document.removeEventListener('mousedown', onDoc);
+  }, []);
+
+  function openPicker() {
+    const p = parseBEDate(value);
+    setViewY(p.y); setViewM(p.m);
+    setOpen(o=>!o);
+  }
+  const selected = parseBEDate(value);
+  const ceYear = viewY - 543;
+  const firstDow = new Date(ceYear, viewM, 1).getDay();
+  const daysInMonth = new Date(ceYear, viewM+1, 0).getDate();
+  const cells = [];
+  for (let i=0;i<firstDow;i++) cells.push(null);
+  for (let dd=1; dd<=daysInMonth; dd++) cells.push(dd);
+
+  function pick(dd) { onChange(toBEString(viewY, viewM, dd)); setOpen(false); }
+  function prevMonth() { if (viewM===0) { setViewM(11); setViewY(y=>y-1);} else setViewM(m=>m-1); }
+  function nextMonth() { if (viewM===11) { setViewM(0); setViewY(y=>y+1);} else setViewM(m=>m+1); }
+  function goToday() {
+    const t = new Date();
+    onChange(toBEString(t.getFullYear()+543, t.getMonth(), t.getDate()));
+    setOpen(false);
+  }
+
+  return (
+    <>
+      <div ref={triggerRef} className="input-wrap" onClick={openPicker} style={{ cursor:'pointer' }}>
+        <Icon k="cal" size={15}/>
+        <span style={{ flex:1, color: value?'var(--ink)':'var(--ink-4)' }}>{value ? formatBEDate(value) : 'เลือกวันที่'}</span>
+      </div>
+      {open && rect && ReactDOM.createPortal(
+        <div ref={popRef} style={{
+          position:'fixed', top: rect.bottom+6, left: rect.left, width:'260px', zIndex:1000,
+          background:'#fff', border:'1px solid var(--bd)', borderRadius:'12px',
+          boxShadow:'0 16px 40px rgba(15,23,42,.22)', padding:'12px',
+        }}>
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'8px' }}>
+            <button type="button" className="icon-btn" onClick={prevMonth}>‹</button>
+            <div style={{ fontWeight:600, fontSize:'13.5px' }}>{THAI_MONTHS_FULL[viewM]} {viewY}</div>
+            <button type="button" className="icon-btn" onClick={nextMonth}>›</button>
+          </div>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', gap:'2px', marginBottom:'4px' }}>
+            {THAI_DAYS_SHORT.map(dn => (
+              <div key={dn} style={{ textAlign:'center', fontSize:'11px', color:'var(--ink-4)', fontWeight:600 }}>{dn}</div>
+            ))}
+          </div>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', gap:'2px' }}>
+            {cells.map((dd,i) => {
+              if (!dd) return <div key={i}/>;
+              const isSel = selected.y===viewY && selected.m===viewM && selected.d===dd;
+              return (
+                <button key={i} type="button" onClick={()=>pick(dd)} style={{
+                  border:'none', background: isSel ? 'var(--accent)' : 'transparent',
+                  color: isSel ? '#fff' : 'var(--ink)',
+                  borderRadius:'8px', padding:'6px 0', fontSize:'12.5px', cursor:'pointer',
+                }}>{dd}</button>
+              );
+            })}
+          </div>
+          <button type="button" className="btn btn-ghost sm" onClick={goToday} style={{ width:'100%', justifyContent:'center', marginTop:'8px' }}>วันนี้</button>
+        </div>,
+        document.body
+      )}
+    </>
+  );
+}
+
+function ItemCombobox({ items, value, onChange, onSelect, placeholder }) {
+  const [open, setOpen] = useS(false);
+  const triggerRef = useR(null);
+  const popRef = useR(null);
+  const rect = useAnchoredPopover(open, triggerRef);
+
+  useE(() => {
+    function onDoc(e) {
+      if (triggerRef.current && triggerRef.current.contains(e.target)) return;
+      if (popRef.current && popRef.current.contains(e.target)) return;
+      setOpen(false);
+    }
+    document.addEventListener('mousedown', onDoc);
+    return () => document.removeEventListener('mousedown', onDoc);
+  }, []);
+
+  const q = (value||'').toLowerCase().trim();
+  const filtered = q
+    ? items.filter(it =>
+        it.name.toLowerCase().includes(q) ||
+        (it.code||'').toLowerCase().includes(q) ||
+        (it.ipiss||'').toLowerCase().includes(q))
+    : items;
+
+  function pick(it) { onSelect(it); setOpen(false); }
+
+  return (
+    <>
+      <div ref={triggerRef} className="input-wrap">
+        <Icon k="search" size={15}/>
+        <input
+          value={value} onChange={e=>{ onChange(e.target.value); setOpen(true); }}
+          onFocus={()=>setOpen(true)}
+          placeholder={placeholder}
+        />
+      </div>
+      {open && rect && ReactDOM.createPortal(
+        <div ref={popRef} style={{
+          position:'fixed', top: rect.bottom+6, left: rect.left, width: rect.width, zIndex:1000,
+          background:'#fff', border:'1px solid var(--bd)', borderRadius:'12px',
+          boxShadow:'0 16px 40px rgba(15,23,42,.22)',
+          maxHeight:'280px', overflowY:'auto', padding:'6px',
+        }}>
+          {filtered.length === 0 ? (
+            <div style={{ padding:'10px 12px', fontSize:'13px', color:'var(--ink-4)' }}>ไม่พบรายการ — พิมพ์เพื่อระบุเอง</div>
+          ) : filtered.slice(0,80).map(it => (
+            <div key={it.code} onMouseDown={()=>pick(it)} style={{ padding:'8px 10px', borderRadius:'8px', cursor:'pointer', fontSize:'13px' }}
+              onMouseEnter={e=>e.currentTarget.style.background='var(--bg)'}
+              onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
+              <div style={{ fontWeight:600, color:'var(--ink)' }}>{it.name}</div>
+              <div style={{ color:'var(--ink-4)', fontSize:'11.5px' }}>{it.ipiss || it.code} · {it.supplier || 'ไม่ระบุผู้จำหน่าย'}</div>
+            </div>
+          ))}
+        </div>,
+        document.body
+      )}
+    </>
+  );
+}
+
+function AddPOModal({ onClose, onSave, items=[] }) {
   const today = new Date();
   const be = `${today.getFullYear()+543}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
   const [d, setD] = useS({ od_no:'', date_ordered: be, items:'', vendor:'', est_days: 30 });
   function set(k,v){ setD(o=>({...o,[k]:v})); }
+  function selectItem(it) { setD(o=>({ ...o, items: it.name, vendor: it.supplier || o.vendor })); }
   const ok = d.od_no && d.items && d.vendor;
   return (
     <ModalShell title="เพิ่มใบสั่งซื้อ (OD)" onClose={onClose} icon="truck">
@@ -1218,11 +1396,11 @@ function AddPOModal({ onClose, onSave }) {
             <div className="input-wrap"><input value={d.od_no} onChange={e=>set('od_no',e.target.value)} placeholder="OD-2569-XXXX"/></div>
           </label>
           <label className="lbl">วันที่สั่งซื้อ
-            <div className="input-wrap"><input value={d.date_ordered} onChange={e=>set('date_ordered',e.target.value)} placeholder="2569-MM-DD"/></div>
+            <ThaiDatePicker value={d.date_ordered} onChange={v=>set('date_ordered',v)}/>
           </label>
         </div>
         <label className="lbl">รายการพัสดุ *
-          <div className="input-wrap"><input value={d.items} onChange={e=>set('items',e.target.value)} placeholder="เช่น Foley 2-way 16 Fr × 200"/></div>
+          <ItemCombobox items={items} value={d.items} onChange={v=>set('items',v)} onSelect={selectItem} placeholder="ค้นหาหรือเลือกพัสดุ…"/>
         </label>
         <div className="form-row">
           <label className="lbl">ผู้จำหน่าย *
@@ -1242,9 +1420,10 @@ function AddPOModal({ onClose, onSave }) {
 }
 
 /* ===== Edit PO modal ===== */
-function EditPOModal({ po, onClose, onSave }) {
+function EditPOModal({ po, onClose, onSave, items=[] }) {
   const [d, setD] = useS({ ...po });
   function set(k,v){ setD(o=>({...o,[k]:v})); }
+  function selectItem(it) { setD(o=>({ ...o, items: it.name, vendor: it.supplier || o.vendor })); }
   const ok = d.od_no && d.items && d.vendor;
   return (
     <ModalShell title="แก้ไขใบสั่งซื้อ (OD)" onClose={onClose} icon="edit">
@@ -1254,11 +1433,11 @@ function EditPOModal({ po, onClose, onSave }) {
             <div className="input-wrap"><input value={d.od_no} onChange={e=>set('od_no',e.target.value)}/></div>
           </label>
           <label className="lbl">วันที่สั่งซื้อ
-            <div className="input-wrap"><input value={d.date_ordered||''} onChange={e=>set('date_ordered',e.target.value)}/></div>
+            <ThaiDatePicker value={d.date_ordered||''} onChange={v=>set('date_ordered',v)}/>
           </label>
         </div>
         <label className="lbl">รายการพัสดุ *
-          <div className="input-wrap"><input value={d.items} onChange={e=>set('items',e.target.value)}/></div>
+          <ItemCombobox items={items} value={d.items} onChange={v=>set('items',v)} onSelect={selectItem} placeholder="ค้นหาหรือเลือกพัสดุ…"/>
         </label>
         <div className="form-row">
           <label className="lbl">ผู้จำหน่าย *
