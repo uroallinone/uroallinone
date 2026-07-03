@@ -1079,10 +1079,12 @@ function poWaitDays(date_ordered, received_date) {
   return Math.floor((end - start) / (1000*60*60*24));
 }
 
-function POScreen({ pos = [], onChange, canEdit, items = [] }) {
+function POScreen({ pos = [], onChange, canEdit, items = [], onReceive }) {
   const [showAdd, setShowAdd] = useS(false);
   const [editPO, setEditPO] = useS(null);
   const [now, setNow] = useS(Date.now());
+  const [confirmOd, setConfirmOd] = useS(null);
+  const [receiveDate, setReceiveDate] = useS(() => { const t = new Date(); return `${t.getFullYear()+543}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`; });
 
   // Real-time tick every 30s (visual cue for "live")
   useE(() => { const t = setInterval(()=>setNow(Date.now()), 30000); return ()=>clearInterval(t); }, []);
@@ -1101,14 +1103,24 @@ function POScreen({ pos = [], onChange, canEdit, items = [] }) {
     alert: enriched.filter(p=>p.over180).length,
   };
 
-  function markReceived(od_no) {
-    const t = new Date();
-    const be = `${t.getFullYear()+543}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`;
-    onChange(pos.map(p => p.od_no===od_no ? { ...p, status:'RECEIVED', received_date: be } : p));
-  }
-
   function addPO(d) {
     onChange([{ ...d, status:'PENDING' }, ...pos]);
+  }
+
+  function startConfirmReceive(od_no) {
+    const t = new Date();
+    const today = `${t.getFullYear()+543}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`;
+    setReceiveDate(today);
+    setConfirmOd(od_no);
+  }
+
+  function doReceive(p) {
+    if (onReceive) {
+      onReceive(p.od_no, receiveDate, p.line_items || []);
+    } else {
+      onChange(pos.map(x => x.od_no===p.od_no ? { ...x, status:'RECEIVED', received_date: receiveDate } : x));
+    }
+    setConfirmOd(null);
   }
 
   return (
@@ -1162,12 +1174,32 @@ function POScreen({ pos = [], onChange, canEdit, items = [] }) {
                   }</span>
                   {p.over180 && <span className="po-alert"><Icon k="alert" size={12}/>เกิน 180 วัน</span>}
                 </div>
-                <div className="po-items">{p.items}</div>
+                <div className="po-items">
+                  {Array.isArray(p.line_items) && p.line_items.length > 0
+                    ? p.line_items.map((li, i) => (
+                        <div key={i} style={{ fontSize:'13.5px', lineHeight:'1.6' }}>
+                          {li.name}{li.qty > 1 ? <span style={{ color:'var(--ink-4)', fontSize:'12px' }}> × {li.qty} {li.unit||''}</span> : ''}
+                        </div>
+                      ))
+                    : <div>{p.items}</div>}
+                </div>
                 <div className="po-meta">
                   <span><Icon k="cal" size={12}/> สั่งเมื่อ {p.date_ordered}</span>
                   <span><Icon k="truck" size={12}/> {p.vendor}</span>
                   <span><Icon k="clock" size={12}/> คาดว่ารับ {p.est_days} วัน</span>
                 </div>
+                {p.od_no === confirmOd && (
+                  <div style={{ marginTop:'10px', padding:'10px 12px', background:'var(--bg)', borderRadius:'10px', display:'flex', gap:'8px', alignItems:'center', flexWrap:'wrap', border:'1px solid var(--bd)' }}>
+                    <span style={{ fontSize:'13px', color:'var(--ink-2)', fontWeight:500, whiteSpace:'nowrap' }}>วันที่รับของ:</span>
+                    <div style={{ flex:'1', minWidth:'160px' }}>
+                      <ThaiDatePicker value={receiveDate} onChange={setReceiveDate}/>
+                    </div>
+                    <button className="btn btn-primary sm" onClick={()=>doReceive(p)}>
+                      <Icon k="check" size={12}/><span>ยืนยัน</span>
+                    </button>
+                    <button className="btn btn-ghost sm" onClick={()=>setConfirmOd(null)}>ยกเลิก</button>
+                  </div>
+                )}
               </div>
               <div className="po-r">
                 <div className="po-days">
@@ -1183,7 +1215,7 @@ function POScreen({ pos = [], onChange, canEdit, items = [] }) {
                   <span className="po-bar-180" style={{ left:`${Math.min(100, (180/Math.max(p.est_days,1))*100)}%` }} title="180 วัน"/>
                 </div>
                 {p.status !== 'RECEIVED' && canEdit && (
-                  <button className="btn btn-mini btn-primary" onClick={()=>markReceived(p.od_no)}>
+                  <button className="btn btn-mini btn-primary" onClick={()=>startConfirmReceive(p.od_no)}>
                     <Icon k="check" size={12}/><span>ยืนยันรับของ</span>
                   </button>
                 )}
@@ -1384,12 +1416,33 @@ function ItemCombobox({ items, value, onChange, onSelect, placeholder }) {
 function AddPOModal({ onClose, onSave, items=[] }) {
   const today = new Date();
   const be = `${today.getFullYear()+543}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
-  const [d, setD] = useS({ od_no:'', date_ordered: be, items:'', vendor:'', est_days: 30 });
+  const [d, setD] = useS({ od_no:'', date_ordered: be, vendor:'', est_days: 30 });
+  const [lines, setLines] = useS([{ inputVal:'', selectedItem:null, qty:1, unit:'ชิ้น' }]);
   function set(k,v){ setD(o=>({...o,[k]:v})); }
-  function selectItem(it) { setD(o=>({ ...o, items: it.name, vendor: it.supplier || o.vendor })); }
-  const ok = d.od_no && d.items && d.vendor;
+
+  function selectItemForLine(idx, it) {
+    setLines(ls => ls.map((l, i) => i !== idx ? l : { ...l, inputVal: it.name, selectedItem: it, unit: it.unit||'ชิ้น' }));
+    const v = it.supplier ? (it.tel ? `${it.supplier} · ${it.tel}` : it.supplier) : '';
+    if (v) setD(o => ({ ...o, vendor: o.vendor || v }));
+  }
+
+  function addLine() { setLines(ls => [...ls, { inputVal:'', selectedItem:null, qty:1, unit:'ชิ้น' }]); }
+  function removeLine(idx) { setLines(ls => ls.filter((_,i) => i !== idx)); }
+
+  const ok = d.od_no && d.vendor && lines.some(l => l.inputVal.trim());
+
+  function handleSave() {
+    const line_items = lines.filter(l => l.inputVal.trim()).map(l => ({
+      code: l.selectedItem?.code || '',
+      name: l.inputVal.trim(),
+      qty: Number(l.qty) || 1,
+      unit: l.unit || 'ชิ้น',
+    }));
+    onSave({ ...d, line_items, items: line_items.map(li=>li.name).join(', ') });
+  }
+
   return (
-    <ModalShell title="เพิ่มใบสั่งซื้อ (OD)" onClose={onClose} icon="truck">
+    <ModalShell title="เพิ่มใบสั่งซื้อ (OD)" onClose={onClose} icon="truck" wide>
       <div className="form">
         <div className="form-row">
           <label className="lbl">เลข OD *
@@ -1399,12 +1452,34 @@ function AddPOModal({ onClose, onSave, items=[] }) {
             <ThaiDatePicker value={d.date_ordered} onChange={v=>set('date_ordered',v)}/>
           </label>
         </div>
-        <label className="lbl">รายการพัสดุ *
-          <ItemCombobox items={items} value={d.items} onChange={v=>set('items',v)} onSelect={selectItem} placeholder="ค้นหาหรือเลือกพัสดุ…"/>
-        </label>
+        <div className="lbl" style={{ marginBottom:'6px' }}>รายการพัสดุ *</div>
+        {lines.map((l, idx) => (
+          <div key={idx} style={{ display:'flex', gap:'6px', alignItems:'center', marginBottom:'8px' }}>
+            <div style={{ flex:1 }}>
+              <ItemCombobox items={items} value={l.inputVal}
+                onChange={v=>setLines(ls=>ls.map((x,i)=>i!==idx?x:{...x,inputVal:v,selectedItem:null}))}
+                onSelect={it=>selectItemForLine(idx,it)}
+                placeholder="ค้นหาหรือเลือกพัสดุ…"/>
+            </div>
+            <div style={{ width:'80px' }}>
+              <div className="input-wrap"><input type="number" value={l.qty} min="1"
+                onChange={e=>setLines(ls=>ls.map((x,i)=>i!==idx?x:{...x,qty:Number(e.target.value)}))}
+                style={{ textAlign:'right' }}/></div>
+            </div>
+            <span style={{ fontSize:'12px', color:'var(--ink-4)', minWidth:'32px' }}>{l.unit||'ชิ้น'}</span>
+            {lines.length > 1 && (
+              <button type="button" className="icon-btn" onClick={()=>removeLine(idx)} style={{ color:'var(--bad)', flexShrink:0 }}>
+                <Icon k="close" size={13}/>
+              </button>
+            )}
+          </div>
+        ))}
+        <button type="button" className="btn btn-ghost sm" onClick={addLine} style={{ marginBottom:'12px' }}>
+          <Icon k="plus" size={13}/><span>เพิ่มรายการพัสดุ</span>
+        </button>
         <div className="form-row">
           <label className="lbl">ผู้จำหน่าย *
-            <div className="input-wrap"><input value={d.vendor} onChange={e=>set('vendor',e.target.value)}/></div>
+            <div className="input-wrap"><input value={d.vendor} onChange={e=>set('vendor',e.target.value)} placeholder="ชื่อบริษัท · เบอร์โทร"/></div>
           </label>
           <label className="lbl">คาดว่าจะได้รับใน (วัน)
             <div className="input-wrap"><input type="number" value={d.est_days} onChange={e=>set('est_days',Number(e.target.value))}/></div>
@@ -1412,7 +1487,7 @@ function AddPOModal({ onClose, onSave, items=[] }) {
         </div>
         <div className="form-actions">
           <button className="btn btn-ghost" onClick={onClose}>ยกเลิก</button>
-          <button className="btn btn-primary" disabled={!ok} onClick={()=>onSave(d)}><Icon k="check" size={14}/><span>บันทึก OD</span></button>
+          <button className="btn btn-primary" disabled={!ok} onClick={handleSave}><Icon k="check" size={14}/><span>บันทึก OD</span></button>
         </div>
       </div>
     </ModalShell>
@@ -1422,11 +1497,36 @@ function AddPOModal({ onClose, onSave, items=[] }) {
 /* ===== Edit PO modal ===== */
 function EditPOModal({ po, onClose, onSave, items=[] }) {
   const [d, setD] = useS({ ...po });
+  const [lines, setLines] = useS(() => {
+    if (Array.isArray(po.line_items) && po.line_items.length > 0)
+      return po.line_items.map(li => ({ inputVal: li.name||'', selectedItem:null, qty: li.qty||1, unit: li.unit||'ชิ้น', code: li.code||'' }));
+    return [{ inputVal: po.items||'', selectedItem:null, qty:1, unit:'ชิ้น', code:'' }];
+  });
   function set(k,v){ setD(o=>({...o,[k]:v})); }
-  function selectItem(it) { setD(o=>({ ...o, items: it.name, vendor: it.supplier || o.vendor })); }
-  const ok = d.od_no && d.items && d.vendor;
+
+  function selectItemForLine(idx, it) {
+    setLines(ls => ls.map((l, i) => i !== idx ? l : { ...l, inputVal: it.name, selectedItem: it, unit: it.unit||'ชิ้น', code: it.code }));
+    const v = it.supplier ? (it.tel ? `${it.supplier} · ${it.tel}` : it.supplier) : '';
+    if (v) setD(o => ({ ...o, vendor: o.vendor || v }));
+  }
+
+  function addLine() { setLines(ls => [...ls, { inputVal:'', selectedItem:null, qty:1, unit:'ชิ้น', code:'' }]); }
+  function removeLine(idx) { setLines(ls => ls.filter((_,i) => i !== idx)); }
+
+  const ok = d.od_no && d.vendor && lines.some(l => l.inputVal.trim());
+
+  function handleSave() {
+    const line_items = lines.filter(l => l.inputVal.trim()).map(l => ({
+      code: l.code || l.selectedItem?.code || '',
+      name: l.inputVal.trim(),
+      qty: Number(l.qty) || 1,
+      unit: l.unit || 'ชิ้น',
+    }));
+    onSave({ ...d, line_items, items: line_items.map(li=>li.name).join(', ') });
+  }
+
   return (
-    <ModalShell title="แก้ไขใบสั่งซื้อ (OD)" onClose={onClose} icon="edit">
+    <ModalShell title="แก้ไขใบสั่งซื้อ (OD)" onClose={onClose} icon="edit" wide>
       <div className="form">
         <div className="form-row">
           <label className="lbl">เลข OD *
@@ -1436,9 +1536,31 @@ function EditPOModal({ po, onClose, onSave, items=[] }) {
             <ThaiDatePicker value={d.date_ordered||''} onChange={v=>set('date_ordered',v)}/>
           </label>
         </div>
-        <label className="lbl">รายการพัสดุ *
-          <ItemCombobox items={items} value={d.items} onChange={v=>set('items',v)} onSelect={selectItem} placeholder="ค้นหาหรือเลือกพัสดุ…"/>
-        </label>
+        <div className="lbl" style={{ marginBottom:'6px' }}>รายการพัสดุ *</div>
+        {lines.map((l, idx) => (
+          <div key={idx} style={{ display:'flex', gap:'6px', alignItems:'center', marginBottom:'8px' }}>
+            <div style={{ flex:1 }}>
+              <ItemCombobox items={items} value={l.inputVal}
+                onChange={v=>setLines(ls=>ls.map((x,i)=>i!==idx?x:{...x,inputVal:v,selectedItem:null}))}
+                onSelect={it=>selectItemForLine(idx,it)}
+                placeholder="ค้นหาหรือเลือกพัสดุ…"/>
+            </div>
+            <div style={{ width:'80px' }}>
+              <div className="input-wrap"><input type="number" value={l.qty} min="1"
+                onChange={e=>setLines(ls=>ls.map((x,i)=>i!==idx?x:{...x,qty:Number(e.target.value)}))}
+                style={{ textAlign:'right' }}/></div>
+            </div>
+            <span style={{ fontSize:'12px', color:'var(--ink-4)', minWidth:'32px' }}>{l.unit||'ชิ้น'}</span>
+            {lines.length > 1 && (
+              <button type="button" className="icon-btn" onClick={()=>removeLine(idx)} style={{ color:'var(--bad)', flexShrink:0 }}>
+                <Icon k="close" size={13}/>
+              </button>
+            )}
+          </div>
+        ))}
+        <button type="button" className="btn btn-ghost sm" onClick={addLine} style={{ marginBottom:'12px' }}>
+          <Icon k="plus" size={13}/><span>เพิ่มรายการพัสดุ</span>
+        </button>
         <div className="form-row">
           <label className="lbl">ผู้จำหน่าย *
             <div className="input-wrap"><input value={d.vendor} onChange={e=>set('vendor',e.target.value)}/></div>
@@ -1456,7 +1578,7 @@ function EditPOModal({ po, onClose, onSave, items=[] }) {
         </label>
         <div className="form-actions">
           <button className="btn btn-ghost" onClick={onClose}>ยกเลิก</button>
-          <button className="btn btn-primary" disabled={!ok} onClick={()=>onSave(d)}><Icon k="check" size={14}/><span>บันทึกการแก้ไข</span></button>
+          <button className="btn btn-primary" disabled={!ok} onClick={handleSave}><Icon k="check" size={14}/><span>บันทึกการแก้ไข</span></button>
         </div>
       </div>
     </ModalShell>

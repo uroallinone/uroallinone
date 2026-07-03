@@ -295,6 +295,34 @@ function App() {
     setEquipment(arr => arr.filter(e => e.eq_no !== eq_no));
     showToast('ลบครุภัณฑ์ออกจากทะเบียนแล้ว');
   }
+  function handlePOReceive(odNo, receivedDate, lineItems) {
+    setPos(arr => arr.map(p => p.od_no === odNo ? { ...p, status:'RECEIVED', received_date: receivedDate } : p));
+    const batch = (lineItems || [])
+      .filter(li => li.code && items.find(i => i.code === li.code))
+      .map(li => {
+        const it = items.find(i => i.code === li.code);
+        return { code: li.code, name: li.name || it.name, qty: Number(li.qty)||1, unit: li.unit || it.unit, od: odNo };
+      });
+    if (batch.length > 0) {
+      setItems(arr => arr.map(i => {
+        const b = batch.find(x => x.code === i.code);
+        return b ? { ...i, qty: i.qty + b.qty, lot: odNo } : i;
+      }));
+      const now = new Date();
+      const ds = now.toISOString().slice(0,10) + ' ' + now.toTimeString().slice(0,5);
+      const newTxns = batch.map(b => ({
+        id: `TX-${now.getFullYear().toString().slice(2)}${(now.getMonth()+1).toString().padStart(2,'0')}-${(Math.floor(Math.random()*900)+100)}`,
+        date: ds, type: 'IN', code: b.code, name: b.name, qty: b.qty, unit: b.unit,
+        by: user?.name || 'ผู้ใช้',
+        note: `OD ${odNo} · รับของ ${receivedDate}`,
+      }));
+      setTxns(arr => [...newTxns, ...arr]);
+      showToast(`รับของ OD ${odNo} · เติมสต๊อก ${batch.length} รายการแล้ว`);
+    } else {
+      showToast(`ยืนยันรับของ OD ${odNo} เรียบร้อย`);
+    }
+  }
+
   function importItems(rows) {
     setItems(arr => {
       const merged = [...arr];
@@ -330,7 +358,7 @@ function App() {
       case 'remaining':
         return <RemainingScreen items={items} cats={URO_CATEGORIES} onStockIn={c=>go('stockin',c)}/>;
       case 'po':
-        return <POScreen pos={pos} onChange={setPos} canEdit={canEdit} items={items}/>;
+        return <POScreen pos={pos} onChange={setPos} canEdit={canEdit} items={items} onReceive={handlePOReceive}/>;
       case 'stockin':
         return <StockMoveScreen kind="IN" items={items} cats={URO_CATEGORIES} user={user}
                                 prefill={prefillCode} onSubmit={b=>commitBatch('IN', b)}/>;
