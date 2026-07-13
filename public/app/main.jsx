@@ -100,6 +100,15 @@ function App() {
   const [txns, setTxns] = useState_(() => loadPersisted('txns', []));
   const [equipment, setEquipment] = useState_(() => loadPersisted('equipment', []));
   const [pos, setPos] = useState_(() => loadPersisted('po', []));
+  const [vendors, setVendors] = useState_(() => {
+    const saved = loadPersisted('vendors', null);
+    if (saved !== null) return saved;
+    // Seed from existing items on first load
+    const storedItems = loadPersisted('items', []);
+    const seen = new Map();
+    storedItems.forEach(i => { if (i.supplier && !seen.has(i.supplier)) seen.set(i.supplier, i.tel || ''); });
+    return Array.from(seen.entries()).map(([name, tel], idx) => ({ id: `V-seed-${idx}`, name, tel }));
+  });
   const [prefillCode, setPrefillCode] = useState_('');
   const [toast, setToast] = useState_(null);
   const [settingsOpen, setSettingsOpen] = useState_(false);
@@ -108,14 +117,15 @@ function App() {
   const hasCloud = typeof UroCloud !== 'undefined';
   const [cloud, setCloud] = useState_({ state: 'off' });
   const applyingRemote = useRef_(false);
-  const dataRef = useRef_({ items, txns, equipment, po: pos, by: user?.name });
-  useEffect_(() => { dataRef.current = { items, txns, equipment, po: pos, by: user?.name }; });
+  const dataRef = useRef_({ items, txns, equipment, po: pos, vendors, by: user?.name });
+  useEffect_(() => { dataRef.current = { items, txns, equipment, po: pos, vendors, by: user?.name }; });
 
   // Persist real data whenever it changes
   useEffect_(() => { savePersisted('items', items); }, [items]);
   useEffect_(() => { savePersisted('txns', txns); }, [txns]);
   useEffect_(() => { savePersisted('equipment', equipment); }, [equipment]);
   useEffect_(() => { savePersisted('po', pos); }, [pos]);
+  useEffect_(() => { savePersisted('vendors', vendors); }, [vendors]);
 
   // Session check + auth state listener
   useEffect_(() => {
@@ -139,6 +149,7 @@ function App() {
       setTxns(d.txns || []);
       if (Array.isArray(d.equipment)) setEquipment(d.equipment);
       if (Array.isArray(d.po)) setPos(d.po);
+      if (Array.isArray(d.vendors)) setVendors(d.vendors);
     });
   }, []);
 
@@ -153,7 +164,7 @@ function App() {
   useEffect_(() => {
     if (!hasCloud || !UroCloud.isLive()) return;
     if (applyingRemote.current) { applyingRemote.current = false; return; }
-    UroCloud.push({ items, txns, equipment, po: pos, by: user?.name });
+    UroCloud.push({ items, txns, equipment, po: pos, vendors, by: user?.name });
   }, [items, txns, equipment, pos]);
 
   // Apply tokens to :root
@@ -203,9 +214,9 @@ function App() {
   // Wipe all data so real data can be entered from a clean slate
   function startFresh() {
     if (!window.confirm('ล้างข้อมูลทั้งหมด และเริ่มกรอกข้อมูลจริง?\n(ลบพัสดุ ประวัติการเคลื่อนไหว ครุภัณฑ์ และใบสั่งซื้อทั้งหมด)\n\nข้อมูลจะลบจากทั้ง Local + Cloud')) return;
-    setItems([]); setTxns([]); setEquipment([]); setPos([]);
+    setItems([]); setTxns([]); setEquipment([]); setPos([]); setVendors([]);
     // Push empty data to Supabase
-    if (hasCloud) UroCloud.push({ items: [], txns: [], equipment: [], po: [] });
+    if (hasCloud) UroCloud.push({ items: [], txns: [], equipment: [], po: [], vendors: [] });
     setSettingsOpen(false);
     showToast('ล้างข้อมูลแล้ว — เริ่มกรอกข้อมูลจริงได้เลย');
     setRoute('items');
@@ -222,6 +233,7 @@ function App() {
     setTxns(data.txns || []);
     if (Array.isArray(data.equipment)) setEquipment(data.equipment);
     if (Array.isArray(data.po)) setPos(data.po);
+    if (Array.isArray(data.vendors)) setVendors(data.vendors);
     setSettingsOpen(false);
     showToast('นำเข้าไฟล์สำรองข้อมูลเรียบร้อยแล้ว');
   }
@@ -283,6 +295,10 @@ function App() {
     setItems(arr => arr.filter(i => i.code !== code));
     showToast('ลบรายการออกจากคลังแล้ว');
   }
+  function addVendor(v) {
+    setVendors(arr => [...arr, v]);
+  }
+
   function addEquipment(d) {
     setEquipment(arr => [{ ...d }, ...arr]);
     showToast(`เพิ่มครุภัณฑ์ "${d.name}" เรียบร้อย`);
@@ -351,10 +367,12 @@ function App() {
       case 'items':
         return <ItemsScreen items={items} cats={URO_CATEGORIES} query={query} canEdit={canEdit}
                             onCount={adjust} onStockIn={c=>go('stockin',c)} onStockOut={c=>go('stockout',c)}
-                            onAdd={addItem} onEdit={editItem} onDelete={deleteItem} onImport={importItems}/>;
+                            onAdd={addItem} onEdit={editItem} onDelete={deleteItem} onImport={importItems}
+                            vendors={vendors} onAddVendor={addVendor}/>;
       case 'equipment':
         return <EquipmentScreen equipment={equipment} canEdit={canEdit}
-                            onAddEquipment={addEquipment} onEditEquipment={editEquipment} onDeleteEquipment={deleteEquipment}/>;
+                            onAddEquipment={addEquipment} onEditEquipment={editEquipment} onDeleteEquipment={deleteEquipment}
+                            vendors={vendors} onAddVendor={addVendor}/>;
       case 'remaining':
         return <RemainingScreen items={items} cats={URO_CATEGORIES} onStockIn={c=>go('stockin',c)}/>;
       case 'po':

@@ -180,7 +180,7 @@ function Dashboard({ items, txns, burn, month, year, cats, onGo, onStockIn, onSt
 }
 
 /* ===== Items list ===== */
-function ItemsScreen({ items, cats, query, canEdit, onCount, onStockIn, onStockOut, onAdd, onEdit, onDelete, onImport }) {
+function ItemsScreen({ items, cats, query, canEdit, onCount, onStockIn, onStockOut, onAdd, onEdit, onDelete, onImport, vendors=[], onAddVendor }) {
   const [cat, setCat] = useS('all');
   const [status, setStatus] = useS('all');
   const [showAdd, setShowAdd] = useS(false);
@@ -306,15 +306,96 @@ function ItemsScreen({ items, cats, query, canEdit, onCount, onStockIn, onStockO
         </div>
       </section>
 
-      {showAdd && <AddItemModal cats={cats} onClose={()=>setShowAdd(false)} onSave={(d)=>{ onAdd(d); setShowAdd(false); }}/>}
+      {showAdd && <AddItemModal cats={cats} vendors={vendors} onAddVendor={onAddVendor} onClose={()=>setShowAdd(false)} onSave={(d)=>{ onAdd(d); setShowAdd(false); }}/>}
       {showImport && <ImportSheetModal onClose={()=>setShowImport(false)} onImport={(rows)=>{ onImport(rows); setShowImport(false); }}/>}
-      {editItem && <EditItemModal cats={cats} item={editItem} onClose={()=>setEditItem(null)} onSave={(d)=>{ onEdit(d); setEditItem(null); }}/>}
+      {editItem && <EditItemModal cats={cats} item={editItem} vendors={vendors} onAddVendor={onAddVendor} onClose={()=>setEditItem(null)} onSave={(d)=>{ onEdit(d); setEditItem(null); }}/>}
     </div>
   );
 }
 
+/* ===== Vendor combobox — searchable dropdown with inline add ===== */
+function VendorCombobox({ vendors, value, onChange, onChangeTel, onAdd, placeholder }) {
+  const [open, setOpen] = useS(false);
+  const [newName, setNewName] = useS('');
+  const [newTel, setNewTel] = useS('');
+  const triggerRef = useR(null);
+  const popRef = useR(null);
+  const rect = useAnchoredPopover(open, triggerRef);
+
+  useE(() => {
+    function onDoc(e) {
+      if (triggerRef.current?.contains(e.target)) return;
+      if (popRef.current?.contains(e.target)) return;
+      setOpen(false);
+    }
+    document.addEventListener('mousedown', onDoc);
+    return () => document.removeEventListener('mousedown', onDoc);
+  }, []);
+
+  const q = (value||'').toLowerCase().trim();
+  const filtered = q
+    ? vendors.filter(v => v.name.toLowerCase().includes(q) || (v.tel||'').includes(q))
+    : vendors;
+
+  function pick(v) { onChange(v.name); onChangeTel(v.tel||''); setOpen(false); }
+
+  function addNew() {
+    if (!newName.trim()) return;
+    const v = { id: 'V-' + Date.now(), name: newName.trim(), tel: newTel.trim() };
+    onAdd(v); onChange(v.name); onChangeTel(v.tel);
+    setNewName(''); setNewTel(''); setOpen(false);
+  }
+
+  return (
+    <>
+      <div ref={triggerRef} className="input-wrap">
+        <Icon k="building" size={15}/>
+        <input value={value} onChange={e=>{ onChange(e.target.value); setOpen(true); }}
+          onFocus={()=>setOpen(true)} placeholder={placeholder||"เลือกหรือพิมพ์ชื่อบริษัท…"}/>
+      </div>
+      {open && rect && ReactDOM.createPortal(
+        <div ref={popRef} style={{
+          position:'fixed', top: rect.bottom+4, left: rect.left, width: Math.max(rect.width, 300), zIndex:1100,
+          background:'#fff', border:'1px solid var(--bd)', borderRadius:'12px',
+          boxShadow:'0 16px 40px rgba(15,23,42,.22)',
+        }}>
+          <div style={{ maxHeight:'160px', overflowY:'auto', padding:'6px' }}>
+            {filtered.length === 0 ? (
+              <div style={{ padding:'10px 12px', fontSize:'13px', color:'var(--ink-4)' }}>
+                {q ? 'ไม่พบ — เพิ่มผู้จำหน่ายใหม่ด้านล่าง' : 'ยังไม่มีผู้จำหน่าย — เพิ่มด้านล่าง'}
+              </div>
+            ) : filtered.map(v => (
+              <div key={v.id} onMouseDown={()=>pick(v)} style={{ padding:'8px 10px', borderRadius:'8px', cursor:'pointer', fontSize:'13px' }}
+                onMouseEnter={e=>e.currentTarget.style.background='var(--bg)'}
+                onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
+                <div style={{ fontWeight:600, color:'var(--ink)' }}>{v.name}</div>
+                {v.tel && <div style={{ color:'var(--ink-4)', fontSize:'11.5px' }}>{v.tel}</div>}
+              </div>
+            ))}
+          </div>
+          <div style={{ borderTop:'1px solid var(--bd)', padding:'8px' }}>
+            <div style={{ fontSize:'11.5px', color:'var(--ink-4)', fontWeight:600, marginBottom:'6px' }}>+ เพิ่มผู้จำหน่ายใหม่</div>
+            <div style={{ display:'flex', gap:'4px' }}>
+              <input style={{ flex:1, border:'1px solid var(--bd)', borderRadius:'6px', padding:'5px 8px', fontSize:'12.5px', outline:'none', color:'var(--ink)' }}
+                value={newName} onChange={e=>setNewName(e.target.value)} placeholder="ชื่อบริษัท"
+                onKeyDown={e=>{ if(e.key==='Enter') addNew(); }}/>
+              <input style={{ width:'110px', border:'1px solid var(--bd)', borderRadius:'6px', padding:'5px 8px', fontSize:'12.5px', outline:'none', color:'var(--ink)' }}
+                value={newTel} onChange={e=>setNewTel(e.target.value)} placeholder="เบอร์โทร"
+                onKeyDown={e=>{ if(e.key==='Enter') addNew(); }}/>
+              <button type="button" className="btn btn-primary sm" onMouseDown={addNew} style={{ flexShrink:0 }}>
+                <Icon k="check" size={13}/>
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+    </>
+  );
+}
+
 /* ===== Add item modal ===== */
-function AddItemModal({ cats, onClose, onSave }) {
+function AddItemModal({ cats, onClose, onSave, vendors=[], onAddVendor }) {
   const [d, setD] = useS({ ipiss:'', name:'', cat:'cath', unit:'ชิ้น', qty:0, min:0, price:0, supplier:'', tel:'' });
   function set(k, v) { setD(o => ({ ...o, [k]: v })); }
   const ok = d.ipiss && d.name;
@@ -350,7 +431,9 @@ function AddItemModal({ cats, onClose, onSave }) {
         </label>
         <div className="form-row">
           <label className="lbl">บริษัทคู่ค้า / ผู้จำหน่าย
-            <div className="input-wrap"><Icon k="building" size={15}/><input value={d.supplier} onChange={e=>set('supplier',e.target.value)} placeholder="เช่น Bard, Olympus"/></div>
+            <VendorCombobox vendors={vendors} value={d.supplier}
+              onChange={v=>set('supplier',v)} onChangeTel={v=>set('tel',v)}
+              onAdd={onAddVendor} placeholder="เช่น Bard, Olympus"/>
           </label>
           <label className="lbl">เบอร์โทรติดต่อ
             <div className="input-wrap"><Icon k="phone" size={15}/><input value={d.tel} onChange={e=>set('tel',e.target.value)} placeholder="02-XXX-XXXX"/></div>
@@ -366,7 +449,7 @@ function AddItemModal({ cats, onClose, onSave }) {
 }
 
 /* ===== Edit item modal ===== */
-function EditItemModal({ cats, item, onClose, onSave }) {
+function EditItemModal({ cats, item, onClose, onSave, vendors=[], onAddVendor }) {
   const [d, setD] = useS({ ...item });
   function set(k, v) { setD(o => ({ ...o, [k]: v })); }
   const ok = d.ipiss && d.name;
@@ -410,7 +493,9 @@ function EditItemModal({ cats, item, onClose, onSave }) {
         </div>
         <div className="form-row">
           <label className="lbl">บริษัทคู่ค้า / ผู้จำหน่าย
-            <div className="input-wrap"><Icon k="building" size={15}/><input value={d.supplier||''} onChange={e=>set('supplier',e.target.value)}/></div>
+            <VendorCombobox vendors={vendors} value={d.supplier||''}
+              onChange={v=>set('supplier',v)} onChangeTel={v=>set('tel',v)}
+              onAdd={onAddVendor}/>
           </label>
           <label className="lbl">เบอร์โทรติดต่อ
             <div className="input-wrap"><Icon k="phone" size={15}/><input value={d.tel||''} onChange={e=>set('tel',e.target.value)}/></div>
@@ -881,7 +966,7 @@ function ageBadge(years) {
   return { tone:'ok', text:'อยู่ในเกณฑ์' };
 }
 
-function EquipmentScreen({ equipment, canEdit, onAddEquipment, onEditEquipment, onDeleteEquipment }) {
+function EquipmentScreen({ equipment, canEdit, onAddEquipment, onEditEquipment, onDeleteEquipment, vendors=[], onAddVendor }) {
   const [filter, setFilter] = useS('all');
   const [showAdd, setShowAdd] = useS(false);
   const [editEq, setEditEq] = useS(null);
@@ -948,6 +1033,7 @@ function EquipmentScreen({ equipment, canEdit, onAddEquipment, onEditEquipment, 
                 <div className="td">
                   <div className="td-name-main">{e.name}</div>
                   <div className="muted sm">มูลค่า {fmt(e.cost)} บาท</div>
+                  {e.supplier && <div className="vendor-line" style={{ marginTop:'2px' }}><Icon k="building" size={11}/><span className="vendor-co" style={{ fontSize:'11.5px' }}>{e.supplier}</span></div>}
                 </div>
                 <div className="td">
                   <div className="mono">{e.received}</div>
@@ -981,17 +1067,17 @@ function EquipmentScreen({ equipment, canEdit, onAddEquipment, onEditEquipment, 
         </div>
       </section>
 
-      {showAdd && <AddEquipmentModal onClose={()=>setShowAdd(false)} onSave={(d)=>{ onAddEquipment(d); setShowAdd(false); }}/>}
-      {editEq && <EditEquipmentModal eq={editEq} onClose={()=>setEditEq(null)} onSave={(d)=>{ onEditEquipment(d); setEditEq(null); }}/>}
+      {showAdd && <AddEquipmentModal vendors={vendors} onAddVendor={onAddVendor} onClose={()=>setShowAdd(false)} onSave={(d)=>{ onAddEquipment(d); setShowAdd(false); }}/>}
+      {editEq && <EditEquipmentModal eq={editEq} vendors={vendors} onAddVendor={onAddVendor} onClose={()=>setEditEq(null)} onSave={(d)=>{ onEditEquipment(d); setEditEq(null); }}/>}
     </div>
   );
 }
 
 /* ===== Equipment modals ===== */
-function AddEquipmentModal({ onClose, onSave }) {
+function AddEquipmentModal({ onClose, onSave, vendors=[], onAddVendor }) {
   const today = new Date();
   const be = `${today.getFullYear()+543}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
-  const [d, setD] = useS({ eq_no:'', name:'', received: be, cost:0, cond:'ปกติ', note:'' });
+  const [d, setD] = useS({ eq_no:'', name:'', received: be, cost:0, cond:'ปกติ', note:'', supplier:'' });
   function set(k,v){ setD(o=>({...o,[k]:v})); }
   const ok = d.eq_no && d.name;
   return (
@@ -1007,6 +1093,11 @@ function AddEquipmentModal({ onClose, onSave }) {
         </div>
         <label className="lbl">ชื่อครุภัณฑ์ *
           <div className="input-wrap"><input value={d.name} onChange={e=>set('name',e.target.value)} placeholder="เช่น Flexible Cystoscope"/></div>
+        </label>
+        <label className="lbl">บริษัทผู้จำหน่าย
+          <VendorCombobox vendors={vendors} value={d.supplier}
+            onChange={v=>set('supplier',v)} onChangeTel={()=>{}}
+            onAdd={onAddVendor} placeholder="เลือกหรือพิมพ์ชื่อบริษัท…"/>
         </label>
         <label className="lbl">มูลค่า (บาท)
           <div className="input-wrap"><input type="number" value={d.cost} onChange={e=>set('cost',Number(e.target.value))}/></div>
@@ -1030,7 +1121,7 @@ function AddEquipmentModal({ onClose, onSave }) {
   );
 }
 
-function EditEquipmentModal({ eq, onClose, onSave }) {
+function EditEquipmentModal({ eq, onClose, onSave, vendors=[], onAddVendor }) {
   const [d, setD] = useS({ ...eq });
   function set(k,v){ setD(o=>({...o,[k]:v})); }
   const ok = d.eq_no && d.name;
@@ -1047,6 +1138,11 @@ function EditEquipmentModal({ eq, onClose, onSave }) {
         </div>
         <label className="lbl">ชื่อครุภัณฑ์ *
           <div className="input-wrap"><input value={d.name} onChange={e=>set('name',e.target.value)}/></div>
+        </label>
+        <label className="lbl">บริษัทผู้จำหน่าย
+          <VendorCombobox vendors={vendors} value={d.supplier||''}
+            onChange={v=>set('supplier',v)} onChangeTel={()=>{}}
+            onAdd={onAddVendor} placeholder="เลือกหรือพิมพ์ชื่อบริษัท…"/>
         </label>
         <label className="lbl">มูลค่า (บาท)
           <div className="input-wrap"><input type="number" value={d.cost||0} onChange={e=>set('cost',Number(e.target.value))}/></div>
