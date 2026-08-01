@@ -75,14 +75,15 @@ function Icon({ k, size = 18, stroke = 1.8, className = '' }) {
 
 /* ---------- Sidebar ---------- */
 const NAV = [
-  { id: 'dashboard', label: 'แดชบอร์ด',     icon: 'dash' },
-  { id: 'items',     label: 'พัสดุ',          icon: 'box'  },
-  { id: 'equipment', label: 'ครุภัณฑ์',       icon: 'gear' },
-  { id: 'stockout',  label: 'รายการใช้/ตัดสต๊อก', icon: 'out'  },
-  { id: 'stockin',   label: 'รับเข้า',         icon: 'in'   },
-  { id: 'remaining', label: 'พัสดุคงเหลือ',    icon: 'alert'},
-  { id: 'po',        label: 'ติดตาม OD',       icon: 'truck'},
-  { id: 'reports',   label: 'รายงาน',          icon: 'rep'  },
+  { id: 'dashboard',   label: 'แดชบอร์ด',          icon: 'dash' },
+  { id: 'items',       label: 'พัสดุอุปกรณ์หลัก',  icon: 'box'  },
+  { id: 'consumables', label: 'พัสดุสิ้นเปลือง',   icon: 'pkg'  },
+  { id: 'equipment',   label: 'ครุภัณฑ์',           icon: 'gear' },
+  { id: 'stockout',    label: 'รายการใช้/ตัดสต๊อก', icon: 'out'  },
+  { id: 'stockin',     label: 'รับเข้า',            icon: 'in'   },
+  { id: 'remaining',   label: 'พัสดุคงเหลือ',       icon: 'alert'},
+  { id: 'po',          label: 'ติดตาม OD',          icon: 'truck'},
+  { id: 'reports',     label: 'รายงาน',             icon: 'rep'  },
 ];
 
 function Sidebar({ active, onNav, open, onClose, collapsed, user, onLogout }) {

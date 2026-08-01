@@ -180,14 +180,15 @@ function Dashboard({ items, txns, burn, month, year, cats, onGo, onStockIn, onSt
 }
 
 /* ===== Items list ===== */
-function ItemsScreen({ items, cats, query, canEdit, onCount, onStockIn, onStockOut, onAdd, onEdit, onDelete, onImport, vendors=[], onAddVendor }) {
+function ItemsScreen({ items, cats, query, canEdit, onCount, onStockIn, onStockOut, onAdd, onEdit, onDelete, onImport, vendors=[], onAddVendor, typeFilter, pageLabel }) {
   const [cat, setCat] = useS('all');
   const [status, setStatus] = useS('all');
   const [showAdd, setShowAdd] = useS(false);
   const [showImport, setShowImport] = useS(false);
   const [editItem, setEditItem] = useS(null);
 
-  const filtered = items.filter(i => {
+  const typeItems = typeFilter ? items.filter(i => i.type === typeFilter) : items;
+  const filtered = typeItems.filter(i => {
     if (cat !== 'all' && i.cat !== cat) return false;
     if (status !== 'all' && statusOf(i) !== status) return false;
     if (query) {
@@ -206,8 +207,8 @@ function ItemsScreen({ items, cats, query, canEdit, onCount, onStockIn, onStockO
     <div className="page">
       <div className="page-head">
         <div>
-          <div className="eyebrow">พัสดุ · Materials</div>
-          <h1 className="page-title">คลังพัสดุ Uro · {fmt(filtered.length)} รายการ</h1>
+          <div className="eyebrow">{pageLabel || 'พัสดุ'} · Materials</div>
+          <h1 className="page-title">{pageLabel || 'คลังพัสดุ Uro'} · {fmt(filtered.length)} รายการ</h1>
           <div className="page-sub">มูลค่าคงเหลือ <b>{fmt(totalValue)} บาท</b> · ระบุ <b>เลข IPISS</b> ทุกรายการ · กำหนดจำนวนคงเหลือขั้นต่ำเพื่อแจ้งเตือนอัตโนมัติ</div>
         </div>
         <div className="page-head-actions">
@@ -218,10 +219,10 @@ function ItemsScreen({ items, cats, query, canEdit, onCount, onStockIn, onStockO
       </div>
 
       <div className="chips-row">
-        <Chip active={cat==='all'} onClick={()=>setCat('all')}>ทั้งหมด ({items.length})</Chip>
+        <Chip active={cat==='all'} onClick={()=>setCat('all')}>ทั้งหมด ({typeItems.length})</Chip>
         {cats.map(c => (
           <Chip key={c.id} active={cat===c.id} onClick={()=>setCat(c.id)} hue={c.hue}>
-            {c.name} ({items.filter(i=>i.cat===c.id).length})
+            {c.name} ({typeItems.filter(i=>i.cat===c.id).length})
           </Chip>
         ))}
         <div className="chip-sep"/>
@@ -306,7 +307,7 @@ function ItemsScreen({ items, cats, query, canEdit, onCount, onStockIn, onStockO
         </div>
       </section>
 
-      {showAdd && <AddItemModal cats={cats} vendors={vendors} onAddVendor={onAddVendor} onClose={()=>setShowAdd(false)} onSave={(d)=>{ onAdd(d); setShowAdd(false); }}/>}
+      {showAdd && <AddItemModal cats={cats} vendors={vendors} onAddVendor={onAddVendor} defaultType={typeFilter||'main'} onClose={()=>setShowAdd(false)} onSave={(d)=>{ onAdd(d); setShowAdd(false); }}/>}
       {showImport && <ImportSheetModal onClose={()=>setShowImport(false)} onImport={(rows)=>{ onImport(rows); setShowImport(false); }}/>}
       {editItem && <EditItemModal cats={cats} item={editItem} vendors={vendors} onAddVendor={onAddVendor} onClose={()=>setEditItem(null)} onSave={(d)=>{ onEdit(d); setEditItem(null); }}/>}
     </div>
@@ -395,8 +396,8 @@ function VendorCombobox({ vendors, value, onChange, onChangeTel, onAdd, placehol
 }
 
 /* ===== Add item modal ===== */
-function AddItemModal({ cats, onClose, onSave, vendors=[], onAddVendor }) {
-  const [d, setD] = useS({ ipiss:'', name:'', cat:'cath', unit:'ชิ้น', qty:0, min:0, price:0, supplier:'', tel:'' });
+function AddItemModal({ cats, onClose, onSave, vendors=[], onAddVendor, defaultType='main' }) {
+  const [d, setD] = useS({ ipiss:'', name:'', cat:'cath', unit:'ชิ้น', qty:0, min:0, price:0, supplier:'', tel:'', type: defaultType });
   function set(k, v) { setD(o => ({ ...o, [k]: v })); }
   const ok = d.ipiss && d.name;
   return (

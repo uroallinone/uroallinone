@@ -1,4 +1,16 @@
 /* Main app — routing state, theme tweaks, mobile drawer */
+const CONSUMABLE_KEYWORDS = [
+  'dj stent','u-cath','flexible urs','trus bx','gw hydro','gw sensor','ตลับหมึก',
+  'single-use digital flexible cystoscope','hemolock สีทอง','hemolock สีม่วง',
+  'hemolock สีเขียว','port 10 mm','pcn set','ligasure laparoscope sealer',
+  'tvt set','access sheath','port balloon','gw แข็ง','versaport v2',
+  'polydiaxanone','polydioxanone',
+];
+function tagItemType(i) {
+  if (i.type) return i;
+  const n = (i.name || '').toLowerCase();
+  return { ...i, type: CONSUMABLE_KEYWORDS.some(k => n.includes(k)) ? 'consumable' : 'main' };
+}
 const { useState: useState_, useEffect: useEffect_, useMemo: useMemo_, useRef: useRef_ } = React;
 
 /* ---- persistence: keep real data in the browser between visits ---- */
@@ -96,7 +108,7 @@ function App() {
   // Start empty — no demo/mock data. Real data is entered by the user and
   // lives in the central database. (Use Settings → "คืนค่าข้อมูลตัวอย่าง"
   // to load the demo dataset on purpose.)
-  const [items, setItems] = useState_(() => loadPersisted('items', []));
+  const [items, setItems] = useState_(() => loadPersisted('items', []).map(tagItemType));
   const [txns, setTxns] = useState_(() => loadPersisted('txns', []));
   const [equipment, setEquipment] = useState_(() => loadPersisted('equipment', []));
   const [pos, setPos] = useState_(() => loadPersisted('po', []));
@@ -145,7 +157,7 @@ function App() {
     });
     UroCloud.onData(d => {
       applyingRemote.current = true;
-      setItems(d.items || []);
+      setItems((d.items || []).map(tagItemType));
       setTxns(d.txns || []);
       if (Array.isArray(d.equipment)) setEquipment(d.equipment);
       if (Array.isArray(d.po)) setPos(d.po);
@@ -224,12 +236,12 @@ function App() {
   // Restore the demo data set (optional — for trying the system out)
   function restoreSample() {
     if (!window.confirm('โหลดข้อมูลตัวอย่างทั้งหมด? ข้อมูลปัจจุบันจะถูกเขียนทับ')) return;
-    setItems(URO_ITEMS); setTxns(URO_TXNS); setEquipment(URO_EQUIPMENT); setPos(URO_PO);
+    setItems(URO_ITEMS.map(tagItemType)); setTxns(URO_TXNS); setEquipment(URO_EQUIPMENT); setPos(URO_PO);
     showToast('โหลดข้อมูลตัวอย่างแล้ว');
   }
   // Restore from a backup file
   function importData(data) {
-    setItems(data.items || []);
+    setItems((data.items || []).map(tagItemType));
     setTxns(data.txns || []);
     if (Array.isArray(data.equipment)) setEquipment(data.equipment);
     if (Array.isArray(data.po)) setPos(data.po);
@@ -368,7 +380,14 @@ function App() {
         return <ItemsScreen items={items} cats={URO_CATEGORIES} query={query} canEdit={canEdit}
                             onCount={adjust} onStockIn={c=>go('stockin',c)} onStockOut={c=>go('stockout',c)}
                             onAdd={addItem} onEdit={editItem} onDelete={deleteItem} onImport={importItems}
-                            vendors={vendors} onAddVendor={addVendor}/>;
+                            vendors={vendors} onAddVendor={addVendor}
+                            typeFilter="main" pageLabel="พัสดุอุปกรณ์หลัก"/>;
+      case 'consumables':
+        return <ItemsScreen items={items} cats={URO_CATEGORIES} query={query} canEdit={canEdit}
+                            onCount={adjust} onStockIn={c=>go('stockin',c)} onStockOut={c=>go('stockout',c)}
+                            onAdd={addItem} onEdit={editItem} onDelete={deleteItem} onImport={importItems}
+                            vendors={vendors} onAddVendor={addVendor}
+                            typeFilter="consumable" pageLabel="พัสดุสิ้นเปลือง"/>;
       case 'equipment':
         return <EquipmentScreen equipment={equipment} canEdit={canEdit}
                             onAddEquipment={addEquipment} onEditEquipment={editEquipment} onDeleteEquipment={deleteEquipment}
