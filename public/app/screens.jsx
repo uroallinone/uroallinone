@@ -234,80 +234,98 @@ function ItemsScreen({ items, cats, query, canEdit, onCount, onStockIn, onStockO
       </div>
 
       <section className="card" style={{padding:0,overflow:'hidden'}}>
-        <div className="ic-list">
-          {filtered.length === 0 && (
-            <div className="ic-empty">ไม่พบรายการที่ตรงกับเงื่อนไข</div>
-          )}
-          {filtered.map(it => {
-            const s = statusOf(it);
-            const cat = cats.find(c=>c.id===it.cat) || { en:'?', hue:220 };
-            const ratio = Math.min(1, it.qty / (it.min * 2.2 || 1));
-            const bg = `oklch(0.92 0.08 ${cat.hue})`;
-            const fg = `oklch(0.28 0.16 ${cat.hue})`;
-            const catIcon = { scope:'scan', cath:'in', stent:'gear', drape:'shield', consum:'pkg' }[it.cat] || 'box';
-            const barColor = s==='out'?'var(--bad)':s==='low'?'#C2410C':s==='warn'?'var(--warn)':'var(--ok)';
-            return (
-              <div key={it.code} className={cx('ic-row', `s-${s}`)}>
-                {/* Square icon */}
-                <div className="ic-sq" style={{background:bg, color:fg}}>
-                  <Icon k={catIcon} size={22}/>
-                  <span>{(cat.en||'').split(' ')[0].slice(0,5).toUpperCase()}</span>
-                </div>
-                {/* Info */}
-                <div className="ic-info">
-                  <div style={{display:'flex',alignItems:'flex-start',gap:'7px',flexWrap:'wrap'}}>
-                    <div className="cat-tag sm" style={{background:bg,color:fg,flexShrink:0,marginTop:'2px'}}>{cat.en}</div>
-                    <div className="ic-name">{it.name}</div>
+        {filtered.length === 0
+          ? <div className="ic-empty">ไม่พบรายการที่ตรงกับเงื่อนไข</div>
+          : (
+          <div className="ic-grid">
+            {filtered.map(it => {
+              const s = statusOf(it);
+              const cat = cats.find(c=>c.id===it.cat) || { en:'?', hue:220 };
+              const ratio = Math.min(1, it.qty / (it.min * 2.2 || 1));
+              const bg  = `oklch(0.92 0.08 ${cat.hue})`;
+              const fg  = `oklch(0.27 0.17 ${cat.hue})`;
+              const bar = `oklch(0.60 0.15 ${cat.hue})`;
+              const catIcon = { scope:'scan', cath:'in', stent:'gear', drape:'shield', consum:'pkg' }[it.cat] || 'box';
+              const qtyColor = s==='out'?'var(--bad)':s==='low'?'#C2410C':s==='warn'?'var(--warn)':'var(--ok)';
+              return (
+                <div key={it.code} className={cx('ic-card', `s-${s}`)}>
+                  {/* top color strip */}
+                  <div className="ic-bar" style={{background:bar}}/>
+
+                  {/* header: icon · cat tag · status */}
+                  <div className="ic-head">
+                    <div className="ic-sq" style={{background:bg,color:fg}}>
+                      <Icon k={catIcon} size={18}/>
+                      <span>{(cat.en||'').split(' ')[0].slice(0,5).toUpperCase()}</span>
+                    </div>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div className="cat-tag sm" style={{background:bg,color:fg}}>{cat.en}</div>
+                    </div>
+                    <StatusPill s={s}/>
                   </div>
-                  <div className="ic-code-row">
-                    <span className="ipiss">{it.ipiss}</span>
-                    <span className="muted sm mono">· {it.code}</span>
-                    <span className="muted sm">· ที่เก็บ {it.loc}</span>
+
+                  {/* name */}
+                  <div className="ic-name">{it.name}</div>
+
+                  {/* codes */}
+                  <div className="ic-codes">
+                    <span className="ipiss" style={{fontSize:'10px',padding:'1px 5px'}}>{it.ipiss}</span>
+                    <span className="mono" style={{fontSize:'10px',color:'var(--ink-4)'}}>· {it.code}</span>
+                    {it.loc && <span style={{fontSize:'10px',color:'var(--ink-4)'}}>· {it.loc}</span>}
                   </div>
-                  <div className="ic-lot">OD {it.lot} · หมดอายุ {it.exp}</div>
-                  <div className="ic-vend-row">
-                    <span className="vendor-co"><Icon k="building" size={12}/>{it.supplier||'—'}</span>
-                    {it.tel && <a className="vendor-tel" href={`tel:${it.tel.replace(/-/g,'')}`}><Icon k="phone" size={12}/>{it.tel}</a>}
+
+                  {/* OD / Exp */}
+                  <div className="ic-lot">OD {it.lot} · Exp {it.exp}</div>
+
+                  <div className="ic-div"/>
+
+                  {/* stats */}
+                  <div className="ic-stats">
+                    <div>
+                      <div className="ic-stat-lbl">ราคา/หน่วย</div>
+                      <span className="ic-stat-big">{fmt(it.price||0)}</span>
+                      <span className="ic-stat-unit">฿</span>
+                    </div>
+                    <div style={{textAlign:'right'}}>
+                      <div className="ic-stat-lbl">คงเหลือ</div>
+                      <span className={cx('ic-stat-big', s==='out'&&'bad')}>{fmt(it.qty)}</span>
+                      <span className="ic-stat-unit">{it.unit}</span>
+                    </div>
+                    <div className="ic-bar-wrap">
+                      <div className="qty-bar">
+                        <span style={{width:`${ratio*100}%`,background:qtyColor}}/>
+                        <span className="qty-min" style={{left:`${(it.min/(it.min*2.2||1))*100}%`}} title={`ขั้นต่ำ ${it.min}`}/>
+                      </div>
+                      <div className="ic-min-lbl">ขั้นต่ำ {it.min} {it.unit}</div>
+                    </div>
                   </div>
-                </div>
-                {/* Price */}
-                <div className="ic-price">
-                  <b>{fmt(it.price||0)}</b>
-                  <span>บาท / {it.unit}</span>
-                </div>
-                {/* Qty */}
-                <div className="ic-qty">
-                  <div className="ic-qty-top">
-                    <b className={s==='out'?'bad':''}>{fmt(it.qty)}</b>
-                    <span>{it.unit}</span>
+
+                  <div className="ic-div"/>
+
+                  {/* vendor */}
+                  <div className="ic-vendor">
+                    <span className="vendor-co" style={{fontSize:'11px'}}><Icon k="building" size={11}/>{it.supplier||'—'}</span>
+                    {it.tel && <a className="vendor-tel" style={{fontSize:'10.5px',padding:'2px 7px'}} href={`tel:${it.tel.replace(/-/g,'')}`}><Icon k="phone" size={11}/>{it.tel}</a>}
                   </div>
-                  <div className="qty-bar" style={{marginTop:'5px'}}>
-                    <span style={{width:`${ratio*100}%`,background:barColor}}/>
-                    <span className="qty-min" style={{left:`${(it.min/(it.min*2.2||1))*100}%`}} title={`ขั้นต่ำ ${it.min}`}/>
-                  </div>
-                  <div className="ic-qty-foot">ขั้นต่ำ {it.min} {it.unit}</div>
-                </div>
-                {/* Status */}
-                <div className="ic-st"><StatusPill s={s}/></div>
-                {/* Actions */}
-                {canEdit && (
-                  <div className="ic-acts">
-                    <div className="ic-acts-r">
-                      <button className="stepper" onClick={()=>onCount(it.code,-1)} aria-label="ลด"><Icon k="minus" size={14}/></button>
-                      <button className="stepper" onClick={()=>onCount(it.code,+1)} aria-label="เพิ่ม"><Icon k="plus" size={14}/></button>
+
+                  {/* actions */}
+                  {canEdit && (
+                    <div className="ic-actions">
+                      <button className="stepper" onClick={()=>onCount(it.code,-1)}><Icon k="minus" size={13}/></button>
+                      <button className="stepper" onClick={()=>onCount(it.code,+1)}><Icon k="plus" size={13}/></button>
                       <button className="btn btn-mini btn-ghost" onClick={()=>onStockIn(it.code)}>รับ</button>
                       <button className="btn btn-mini btn-primary" onClick={()=>onStockOut(it.code)}>เบิก</button>
+                      <div style={{marginLeft:'auto',display:'flex',gap:'4px'}}>
+                        <button className="btn btn-mini btn-ghost" onClick={()=>setEditItem(it)}>✏️</button>
+                        <button className="btn btn-mini btn-danger" onClick={()=>{if(window.confirm(`ลบ "${it.name}" ออกจากคลัง?`))onDelete(it.code);}}>🗑️</button>
+                      </div>
                     </div>
-                    <div className="ic-acts-r" style={{justifyContent:'flex-end'}}>
-                      <button className="btn btn-mini btn-ghost" title="แก้ไข" onClick={()=>setEditItem(it)}>✏️</button>
-                      <button className="btn btn-mini btn-danger" title="ลบ" onClick={()=>{ if(window.confirm(`ลบ "${it.name}" ออกจากคลัง?`)) onDelete(it.code); }}>🗑️</button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
         <div className="tfoot">
           <span>แสดง {filtered.length} จาก {typeItems.length} รายการ · มูลค่ารวม {fmt(totalValue)} บาท</span>
           <div className="pager">
