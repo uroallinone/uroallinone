@@ -236,26 +236,25 @@ function ItemsScreen({ items, cats, query, canEdit, onCount, onStockIn, onStockO
       <section className="card" style={{padding:0,overflow:'hidden'}}>
         {filtered.length === 0
           ? <div className="ic-empty">ไม่พบรายการที่ตรงกับเงื่อนไข</div>
-          : (
-          <div className="ic-grid">
-            {filtered.map(it => {
+          : (() => {
+            const CAT_ICONS = { scope:'scan', cath:'in', stent:'gear', drape:'shield', consum:'pkg' };
+            const grouped = cats
+              .map(c => ({ cat: c, items: filtered.filter(i => i.cat === c.id) }))
+              .filter(g => g.items.length > 0);
+            const renderCard = (it, cat) => {
               const s = statusOf(it);
-              const cat = cats.find(c=>c.id===it.cat) || { en:'?', hue:220 };
               const ratio = Math.min(1, it.qty / (it.min * 2.2 || 1));
               const bg  = `oklch(0.92 0.08 ${cat.hue})`;
               const fg  = `oklch(0.27 0.17 ${cat.hue})`;
               const bar = `oklch(0.60 0.15 ${cat.hue})`;
-              const catIcon = { scope:'scan', cath:'in', stent:'gear', drape:'shield', consum:'pkg' }[it.cat] || 'box';
+              const icon = CAT_ICONS[cat.id] || 'box';
               const qtyColor = s==='out'?'var(--bad)':s==='low'?'#C2410C':s==='warn'?'var(--warn)':'var(--ok)';
               return (
                 <div key={it.code} className={cx('ic-card', `s-${s}`)}>
-                  {/* top color strip */}
                   <div className="ic-bar" style={{background:bar}}/>
-
-                  {/* header: icon · cat tag · status */}
                   <div className="ic-head">
                     <div className="ic-sq" style={{background:bg,color:fg}}>
-                      <Icon k={catIcon} size={18}/>
+                      <Icon k={icon} size={18}/>
                       <span>{(cat.en||'').split(' ')[0].slice(0,5).toUpperCase()}</span>
                     </div>
                     <div style={{flex:1,minWidth:0}}>
@@ -263,23 +262,14 @@ function ItemsScreen({ items, cats, query, canEdit, onCount, onStockIn, onStockO
                     </div>
                     <StatusPill s={s}/>
                   </div>
-
-                  {/* name */}
                   <div className="ic-name">{it.name}</div>
-
-                  {/* codes */}
                   <div className="ic-codes">
                     <span className="ipiss" style={{fontSize:'10px',padding:'1px 5px'}}>{it.ipiss}</span>
                     <span className="mono" style={{fontSize:'10px',color:'var(--ink-4)'}}>· {it.code}</span>
                     {it.loc && <span style={{fontSize:'10px',color:'var(--ink-4)'}}>· {it.loc}</span>}
                   </div>
-
-                  {/* OD / Exp */}
                   <div className="ic-lot">OD {it.lot} · Exp {it.exp}</div>
-
                   <div className="ic-div"/>
-
-                  {/* stats */}
                   <div className="ic-stats">
                     <div>
                       <div className="ic-stat-lbl">ราคา/หน่วย</div>
@@ -299,16 +289,11 @@ function ItemsScreen({ items, cats, query, canEdit, onCount, onStockIn, onStockO
                       <div className="ic-min-lbl">ขั้นต่ำ {it.min} {it.unit}</div>
                     </div>
                   </div>
-
                   <div className="ic-div"/>
-
-                  {/* vendor */}
                   <div className="ic-vendor">
                     <span className="vendor-co" style={{fontSize:'11px'}}><Icon k="building" size={11}/>{it.supplier||'—'}</span>
                     {it.tel && <a className="vendor-tel" style={{fontSize:'10.5px',padding:'2px 7px'}} href={`tel:${it.tel.replace(/-/g,'')}`}><Icon k="phone" size={11}/>{it.tel}</a>}
                   </div>
-
-                  {/* actions */}
                   {canEdit && (
                     <div className="ic-actions">
                       <button className="stepper" onClick={()=>onCount(it.code,-1)}><Icon k="minus" size={13}/></button>
@@ -323,9 +308,36 @@ function ItemsScreen({ items, cats, query, canEdit, onCount, onStockIn, onStockO
                   )}
                 </div>
               );
-            })}
-          </div>
-        )}
+            };
+            return (
+              <div className="ic-groups">
+                {grouped.map(({ cat, items }) => {
+                  const bg  = `oklch(0.92 0.08 ${cat.hue})`;
+                  const fg  = `oklch(0.27 0.17 ${cat.hue})`;
+                  const bar = `oklch(0.60 0.15 ${cat.hue})`;
+                  const icon = CAT_ICONS[cat.id] || 'box';
+                  return (
+                    <div key={cat.id} className="ic-group">
+                      <div className="ic-group-head" style={{borderLeftColor:bar}}>
+                        <div className="ic-sq" style={{background:bg,color:fg,width:'34px',height:'34px',borderRadius:'9px',fontSize:'7.5px'}}>
+                          <Icon k={icon} size={15}/>
+                          <span>{(cat.en||'').split(' ')[0].slice(0,4).toUpperCase()}</span>
+                        </div>
+                        <div>
+                          <div className="ic-group-name">{cat.name}</div>
+                          <div className="ic-group-sub">{cat.en} · {items.length} รายการ</div>
+                        </div>
+                      </div>
+                      <div className="ic-grid">
+                        {items.map(it => renderCard(it, cat))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()
+        }
         <div className="tfoot">
           <span>แสดง {filtered.length} จาก {typeItems.length} รายการ · มูลค่ารวม {fmt(totalValue)} บาท</span>
           <div className="pager">
@@ -1283,90 +1295,117 @@ function POScreen({ pos = [], onChange, canEdit, items = [], onReceive }) {
         </div>
       )}
 
-      <section className="card">
-        <div className="card-head">
+      <section className="card" style={{padding:0,overflow:'hidden'}}>
+        <div className="card-head" style={{padding:'var(--card-pad)',borderBottom:'1px solid var(--bd-2)'}}>
           <div className="card-title">รายการ OD ทั้งหมด</div>
           <div className="legend">
-            <span className="legend-item"><span className="dot" style={{ background:'var(--ok)' }}/>รับของแล้ว</span>
-            <span className="legend-item"><span className="dot" style={{ background:'var(--warn)' }}/>กำลังรอ</span>
-            <span className="legend-item"><span className="dot" style={{ background:'var(--bad)' }}/>เกิน 180 วัน</span>
+            <span className="legend-item"><span className="dot" style={{background:'var(--ok)'}}/>รับของแล้ว</span>
+            <span className="legend-item"><span className="dot" style={{background:'var(--warn)'}}/>กำลังรอ</span>
+            <span className="legend-item"><span className="dot" style={{background:'var(--bad)'}}/>เกิน 180 วัน</span>
           </div>
         </div>
-        <ul className="polist">
-          {enriched.map(p => (
-            <li key={p.od_no} className={cx('po-row', p.over180 && 'is-alert', p.status==='RECEIVED' && 'is-done')}>
-              <div className="po-l">
-                <div className="po-head">
-                  <span className="mono po-no">{p.od_no}</span>
-                  <span className={cx('po-status', `po-${p.status.toLowerCase()}`)}>{
-                    p.status==='RECEIVED'?'รับของแล้ว': p.status==='SHIPPED'?'อยู่ระหว่างขนส่ง':'รอจัดส่ง'
-                  }</span>
-                  {p.over180 && <span className="po-alert"><Icon k="alert" size={12}/>เกิน 180 วัน</span>}
+        <div className="od-grid">
+          {enriched.map(p => {
+            const badgeClass = p.status==='RECEIVED' ? 'is-done-b' : p.over180 ? 'is-alert-b' : '';
+            return (
+              <div key={p.od_no} className={cx('od-card', p.over180&&'is-alert', p.status==='RECEIVED'&&'is-done')}>
+                {/* Header */}
+                <div className="od-head">
+                  <div className={cx('od-badge', badgeClass)}>
+                    <Icon k={p.status==='RECEIVED'?'check':p.over180?'alert':'truck'} size={18}/>
+                  </div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div className="od-no-t">{p.od_no}</div>
+                  </div>
+                  <span className={cx('po-status', `po-${p.status.toLowerCase()}`)}>
+                    {p.status==='RECEIVED'?'รับของแล้ว':p.status==='SHIPPED'?'ขนส่งแล้ว':'รอจัดส่ง'}
+                  </span>
                 </div>
-                <div className="po-items">
+                {p.over180 && (
+                  <div style={{padding:'0 14px 6px'}}>
+                    <span className="po-alert" style={{fontSize:'11px'}}><Icon k="alert" size={11}/>รอเกิน 180 วัน</span>
+                  </div>
+                )}
+
+                <div className="od-div"/>
+
+                {/* Items */}
+                <div className="od-items">
                   {Array.isArray(p.line_items) && p.line_items.length > 0
-                    ? p.line_items.map((li, i) => (
-                        <div key={i} style={{ fontSize:'13.5px', lineHeight:'1.6' }}>
-                          {li.name}{li.qty > 1 ? <span style={{ color:'var(--ink-4)', fontSize:'12px' }}> × {li.qty} {li.unit||''}</span> : ''}
+                    ? p.line_items.map((li,i) => (
+                        <div key={i} style={{display:'flex',alignItems:'baseline',gap:'4px'}}>
+                          <span style={{color:'var(--ink-4)',fontSize:'11px',flexShrink:0}}>·</span>
+                          <span>{li.name}</span>
+                          {li.qty>1 && <span style={{color:'var(--ink-4)',fontSize:'11px',flexShrink:0}}> × {li.qty} {li.unit||''}</span>}
                         </div>
                       ))
                     : <div>{p.items}</div>}
                 </div>
-                <div className="po-meta">
-                  <span><Icon k="cal" size={12}/> สั่งเมื่อ {p.date_ordered}</span>
-                  <span><Icon k="truck" size={12}/> {p.vendor}</span>
-                  <span><Icon k="clock" size={12}/> คาดว่ารับ {p.est_days} วัน</span>
+
+                <div className="od-div"/>
+
+                {/* Meta */}
+                <div className="od-meta">
+                  <div className="od-meta-r"><Icon k="cal" size={12}/> สั่งเมื่อ {p.date_ordered}</div>
+                  <div className="od-meta-r"><Icon k="building" size={12}/> {p.vendor}</div>
+                  <div className="od-meta-r"><Icon k="clock" size={12}/> คาดว่ารับ {p.est_days} วัน</div>
                 </div>
+
+                <div className="od-div"/>
+
+                {/* Days */}
+                <div className="od-days">
+                  <div className="od-days-n">
+                    <b className={p.over180?'bad':''}>{p.days}</b><span> วัน</span>
+                  </div>
+                  <div className="od-days-lbl">{p.status==='RECEIVED'?'ใช้เวลารวม':'รอคอยอยู่'}</div>
+                </div>
+                <div className="od-bar-wrap">
+                  <div className="po-bar">
+                    <span className="po-bar-fill"
+                          style={{width:`${Math.min(100,p.ratio*100)}%`,
+                                  background:p.over180?'var(--bad)':p.ratio>1?'var(--warn)':'var(--ok)'}}/>
+                    <span className="po-bar-180" style={{left:`${Math.min(100,(180/Math.max(p.est_days,1))*100)}%`}} title="180 วัน"/>
+                  </div>
+                </div>
+
+                {/* Confirm receive inline */}
                 {p.od_no === confirmOd && (
-                  <div style={{ marginTop:'10px', padding:'12px 14px', background:'var(--bg)', borderRadius:'10px', border:'1px solid var(--bd)', display:'flex', flexDirection:'column', gap:'10px' }}>
-                    <div style={{ display:'flex', gap:'8px', alignItems:'center', flexWrap:'wrap' }}>
-                      <span style={{ fontSize:'13px', color:'var(--ink-2)', fontWeight:500, whiteSpace:'nowrap', minWidth:'80px' }}>วันที่รับของ:</span>
-                      <div style={{ flex:'1', minWidth:'160px' }}>
-                        <ThaiDatePicker value={receiveDate} onChange={setReceiveDate}/>
-                      </div>
+                  <div className="od-confirm">
+                    <div className="od-confirm-row">
+                      <span className="od-confirm-lbl">วันที่รับ:</span>
+                      <div style={{flex:1}}><ThaiDatePicker value={receiveDate} onChange={setReceiveDate}/></div>
                     </div>
-                    <div style={{ display:'flex', gap:'8px', alignItems:'center', flexWrap:'wrap' }}>
-                      <span style={{ fontSize:'13px', color:'var(--ink-2)', fontWeight:500, whiteSpace:'nowrap', minWidth:'80px' }}>วัน Exp.:</span>
-                      <div style={{ flex:'1', minWidth:'160px' }}>
-                        <ThaiDatePicker value={expDate} onChange={setExpDate} placeholder="ไม่ระบุ"/>
-                      </div>
+                    <div className="od-confirm-row">
+                      <span className="od-confirm-lbl">วัน Exp.:</span>
+                      <div style={{flex:1}}><ThaiDatePicker value={expDate} onChange={setExpDate} placeholder="ไม่ระบุ"/></div>
                     </div>
-                    <div style={{ display:'flex', gap:'8px' }}>
-                      <button className="btn btn-primary sm" onClick={()=>doReceive(p)}>
-                        <Icon k="check" size={12}/><span>ยืนยัน</span>
-                      </button>
+                    <div style={{display:'flex',gap:'6px'}}>
+                      <button className="btn btn-primary sm" onClick={()=>doReceive(p)}><Icon k="check" size={12}/><span>ยืนยัน</span></button>
                       <button className="btn btn-ghost sm" onClick={()=>setConfirmOd(null)}>ยกเลิก</button>
                     </div>
                   </div>
                 )}
-              </div>
-              <div className="po-r">
-                <div className="po-days">
-                  <div className="po-days-num">
-                    <b className={p.over180?'bad':''}>{p.days}</b><span> วัน</span>
+
+                {/* Actions */}
+                <div className="od-actions">
+                  {p.status !== 'RECEIVED' && canEdit && (
+                    <button className="btn btn-mini btn-primary" onClick={()=>startConfirmReceive(p.od_no)}>
+                      <Icon k="check" size={12}/><span>ยืนยันรับของ</span>
+                    </button>
+                  )}
+                  {p.status === 'RECEIVED' && (
+                    <span style={{fontSize:'11px',color:'var(--ink-3)'}}>รับเมื่อ {p.received_date}</span>
+                  )}
+                  <div style={{marginLeft:'auto',display:'flex',gap:'5px'}}>
+                    {canEdit && <button className="btn btn-mini btn-ghost" onClick={()=>setEditPO(p)}>✏️</button>}
+                    {canEdit && <button className="btn btn-mini btn-danger" onClick={()=>{if(window.confirm(`ลบ OD "${p.od_no}" ออก?`))onChange(pos.filter(x=>x.od_no!==p.od_no));}}> 🗑️</button>}
                   </div>
-                  <div className="po-days-lbl">{p.status==='RECEIVED'?'ใช้เวลารวม':'รอคอยอยู่'}</div>
                 </div>
-                <div className="po-bar">
-                  <span className="po-bar-fill"
-                        style={{ width: `${Math.min(100, p.ratio*100)}%`,
-                                 background: p.over180?'var(--bad)':p.ratio>1?'var(--warn)':'var(--ok)' }}/>
-                  <span className="po-bar-180" style={{ left:`${Math.min(100, (180/Math.max(p.est_days,1))*100)}%` }} title="180 วัน"/>
-                </div>
-                {p.status !== 'RECEIVED' && canEdit && (
-                  <button className="btn btn-mini btn-primary" onClick={()=>startConfirmReceive(p.od_no)}>
-                    <Icon k="check" size={12}/><span>ยืนยันรับของ</span>
-                  </button>
-                )}
-                {p.status === 'RECEIVED' && (
-                  <span className="muted sm">รับเมื่อ {p.received_date}</span>
-                )}
-                {canEdit && <button className="btn btn-mini btn-ghost" title="แก้ไข" onClick={()=>setEditPO(p)}>✏️</button>}
-                {canEdit && <button className="btn btn-mini btn-danger" title="ลบ" onClick={()=>{ if(window.confirm(`ลบ OD "${p.od_no}" ออก?`)) onChange(pos.filter(x=>x.od_no!==p.od_no)); }}>🗑️</button>}
               </div>
-            </li>
-          ))}
-        </ul>
+            );
+          })}
+        </div>
       </section>
 
       {showAdd && <AddPOModal items={items} onClose={()=>setShowAdd(false)} onSave={(d)=>{ addPO(d); setShowAdd(false); }}/>}
