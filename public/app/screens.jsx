@@ -1887,3 +1887,22 @@ function RemainingScreen({ items, cats, onStockIn }) {
   );
 }
 
+/* ===== Guide screen ===== */
+function GuideScreen() {
+  return (
+    <div style={{ display:'flex', flexDirection:'column', height:'100%', overflow:'hidden' }}>
+      <div className="page-head" style={{ flexShrink:0 }}>
+        <div>
+          <div className="eyebrow">คู่มือ · Reference</div>
+          <h1 className="page-title">คู่มือส่งเครื่องมือผ่าตัด แผนกศัลยกรรมทางเดินปัสสาวะ</h1>
+        </div>
+      </div>
+      <iframe
+        src="/guide.html"
+        style={{ flex:1, border:'none', width:'100%', minHeight:0 }}
+        title="คู่มือส่งเครื่องมือผ่าตัด"
+      />
+    </div>
+  );
+}
+

@@ -404,6 +404,8 @@ function App() {
                                 prefill={prefillCode} onSubmit={b=>commitBatch('OUT', b)}/>;
       case 'reports':
         return <ReportsScreen items={items} txns={txns} cats={URO_CATEGORIES}/>;
+      case 'guide':
+        return <GuideScreen/>;
       default: return null;
     }
   })();

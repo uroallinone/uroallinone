@@ -64,6 +64,7 @@ const I = {
   lock:   <path d="M6 11h12v9H6zM9 11V8a3 3 0 016 0v3M12 15v2"/>,
   cloud:  <path d="M6 18a4 4 0 010-8 5 5 0 019.6-1.3A3.5 3.5 0 0118 18H6Z"/>,
   cloudoff: <path d="M3 3l18 18M6 18a4 4 0 01-.9-7.9M9 5.6A5 5 0 0115.6 8.7 3.5 3.5 0 0118.9 14M9 18h8"/>,
+  book:     <path d="M4 19.5A2.5 2.5 0 016.5 17H20M4 19.5A2.5 2.5 0 004 17V5a2 2 0 012-2h14v10H6.5A2.5 2.5 0 004 15v4.5z"/>,
 };
 function Icon({ k, size = 18, stroke = 1.8, className = '' }) {
   return (
@@ -84,6 +85,7 @@ const NAV = [
   { id: 'remaining',   label: 'พัสดุคงเหลือ',       icon: 'alert'},
   { id: 'po',          label: 'ติดตาม OD',          icon: 'truck'},
   { id: 'reports',     label: 'รายงาน',             icon: 'rep'  },
+  { id: 'guide',       label: 'คู่มือส่งเครื่องมือ', icon: 'book' },
 ];
 
 function Sidebar({ active, onNav, open, onClose, collapsed, user, onLogout }) {
