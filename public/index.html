@@ -1540,8 +1540,9 @@ body {
   overflow: hidden; transition: border-color .15s, box-shadow .15s, transform .12s;
 }
 .od-card:hover { border-color: var(--accent); box-shadow: 0 4px 20px rgba(0,0,0,.09); transform: translateY(-1px); }
-.od-card.is-alert { border-color: #FECACA; background: linear-gradient(160deg,#fff8f8,var(--surface) 40%); }
-.od-card.is-done  { background: linear-gradient(160deg,#f0fdf4,var(--surface) 40%); }
+.od-card.is-pending { border-color: #FDE68A; background: linear-gradient(160deg,#FFFBEB,#FEFCE8 40%,var(--surface) 80%); }
+.od-card.is-alert   { border-color: #FECACA; background: linear-gradient(160deg,#FFF1F2,var(--surface) 50%); }
+.od-card.is-done    { border-color: #BBF7D0; background: linear-gradient(160deg,#F0FDF4,#DCFCE7 40%,var(--surface) 80%); }
 
 .od-head { display: flex; align-items: center; gap: 10px; padding: 12px 14px 8px; }
 .od-badge {
@@ -1549,8 +1550,9 @@ body {
   background: var(--accent-soft); color: var(--accent-ink);
   display: flex; align-items: center; justify-content: center;
 }
-.od-badge.is-done-b { background: var(--ok-soft); color: var(--ok); }
-.od-badge.is-alert-b { background: var(--bad-soft); color: var(--bad); }
+.od-badge.is-done-b    { background: var(--ok-soft); color: var(--ok); }
+.od-badge.is-alert-b  { background: var(--bad-soft); color: var(--bad); }
+.od-badge.is-pending-b { background: #FEF3C7; color: #92400E; }
 .od-no-t { font-weight: 700; font-size: 13px; color: var(--ink); font-family: var(--mono); flex: 1; min-width: 0; }
 .od-div { height: 1px; background: var(--bd-2); margin: 0 14px; }
 .od-items { padding: 8px 14px; font-size: 13px; color: var(--ink); line-height: 1.6; }

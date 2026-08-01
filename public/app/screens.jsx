@@ -1234,6 +1234,10 @@ function POScreen({ pos = [], onChange, canEdit, items = [], onReceive }) {
     const over180 = days > 180 && p.status !== 'RECEIVED';
     const ratio = Math.min(1, days/Math.max(p.est_days, 1));
     return { ...p, days, over180, ratio };
+  }).sort((a, b) => {
+    // over180 → pending/shipped → received
+    const rank = p => p.status === 'RECEIVED' ? 2 : p.over180 ? 0 : 1;
+    return rank(a) - rank(b);
   });
 
   const counts = {
@@ -1306,9 +1310,10 @@ function POScreen({ pos = [], onChange, canEdit, items = [], onReceive }) {
         </div>
         <div className="od-grid">
           {enriched.map(p => {
-            const badgeClass = p.status==='RECEIVED' ? 'is-done-b' : p.over180 ? 'is-alert-b' : '';
+            const badgeClass = p.status==='RECEIVED' ? 'is-done-b' : p.over180 ? 'is-alert-b' : 'is-pending-b';
+            const isPending = p.status !== 'RECEIVED' && !p.over180;
             return (
-              <div key={p.od_no} className={cx('od-card', p.over180&&'is-alert', p.status==='RECEIVED'&&'is-done')}>
+              <div key={p.od_no} className={cx('od-card', p.over180&&'is-alert', isPending&&'is-pending', p.status==='RECEIVED'&&'is-done')}>
                 {/* Header */}
                 <div className="od-head">
                   <div className={cx('od-badge', badgeClass)}>
