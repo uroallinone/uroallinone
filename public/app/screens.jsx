@@ -233,71 +233,83 @@ function ItemsScreen({ items, cats, query, canEdit, onCount, onStockIn, onStockO
         ))}
       </div>
 
-      <section className="card card-table">
-        <div className="thead thead-items">
-          <div className="th">เลข IPISS / รหัส</div>
-          <div className="th">ชื่อพัสดุ</div>
-          <div className="th th-num">ราคา/หน่วย</div>
-          <div className="th th-num">คงเหลือ</div>
-          <div className="th th-num">ขั้นต่ำ</div>
-          <div className="th">สถานะ</div>
-          {canEdit && <div className="th">ปรับสต๊อก</div>}
-        </div>
-        <div className="tbody">
+      <section className="card" style={{padding:0,overflow:'hidden'}}>
+        <div className="ic-list">
+          {filtered.length === 0 && (
+            <div className="ic-empty">ไม่พบรายการที่ตรงกับเงื่อนไข</div>
+          )}
           {filtered.map(it => {
             const s = statusOf(it);
-            const cat = cats.find(c=>c.id===it.cat);
+            const cat = cats.find(c=>c.id===it.cat) || { en:'?', hue:220 };
             const ratio = Math.min(1, it.qty / (it.min * 2.2 || 1));
+            const bg = `oklch(0.92 0.08 ${cat.hue})`;
+            const fg = `oklch(0.28 0.16 ${cat.hue})`;
+            const catIcon = { scope:'scan', cath:'in', stent:'gear', drape:'shield', consum:'pkg' }[it.cat] || 'box';
+            const barColor = s==='out'?'var(--bad)':s==='low'?'#C2410C':s==='warn'?'var(--warn)':'var(--ok)';
             return (
-              <div key={it.code} className="tr tr-items">
-                <div className="td td-code">
-                  <span className="mono ipiss">{it.ipiss}</span>
-                  <span className="mono sm muted">{it.code} · {it.loc}</span>
+              <div key={it.code} className={cx('ic-row', `s-${s}`)}>
+                {/* Square icon */}
+                <div className="ic-sq" style={{background:bg, color:fg}}>
+                  <Icon k={catIcon} size={22}/>
+                  <span>{(cat.en||'').split(' ')[0].slice(0,5).toUpperCase()}</span>
                 </div>
-                <div className="td td-name">
-                  <div className="cat-tag sm" style={{ background: `oklch(0.95 0.04 ${cat.hue})`, color: `oklch(0.35 0.12 ${cat.hue})` }}>{cat.en}</div>
-                  <div className="td-name-text">
-                    <div className="td-name-main">{it.name}</div>
-                    <div className="td-name-sub">OD {it.lot} · หมดอายุ {it.exp}</div>
-                    <div className="vendor-line">
-                      <span className="vendor-co"><Icon k="building" size={12}/>{it.supplier || '—'}</span>
-                      {it.tel && <a className="vendor-tel" href={`tel:${it.tel.replace(/-/g,'')}`}><Icon k="phone" size={12}/>{it.tel}</a>}
+                {/* Info */}
+                <div className="ic-info">
+                  <div style={{display:'flex',alignItems:'flex-start',gap:'7px',flexWrap:'wrap'}}>
+                    <div className="cat-tag sm" style={{background:bg,color:fg,flexShrink:0,marginTop:'2px'}}>{cat.en}</div>
+                    <div className="ic-name">{it.name}</div>
+                  </div>
+                  <div className="ic-code-row">
+                    <span className="ipiss">{it.ipiss}</span>
+                    <span className="muted sm mono">· {it.code}</span>
+                    <span className="muted sm">· ที่เก็บ {it.loc}</span>
+                  </div>
+                  <div className="ic-lot">OD {it.lot} · หมดอายุ {it.exp}</div>
+                  <div className="ic-vend-row">
+                    <span className="vendor-co"><Icon k="building" size={12}/>{it.supplier||'—'}</span>
+                    {it.tel && <a className="vendor-tel" href={`tel:${it.tel.replace(/-/g,'')}`}><Icon k="phone" size={12}/>{it.tel}</a>}
+                  </div>
+                </div>
+                {/* Price */}
+                <div className="ic-price">
+                  <b>{fmt(it.price||0)}</b>
+                  <span>บาท / {it.unit}</span>
+                </div>
+                {/* Qty */}
+                <div className="ic-qty">
+                  <div className="ic-qty-top">
+                    <b className={s==='out'?'bad':''}>{fmt(it.qty)}</b>
+                    <span>{it.unit}</span>
+                  </div>
+                  <div className="qty-bar" style={{marginTop:'5px'}}>
+                    <span style={{width:`${ratio*100}%`,background:barColor}}/>
+                    <span className="qty-min" style={{left:`${(it.min/(it.min*2.2||1))*100}%`}} title={`ขั้นต่ำ ${it.min}`}/>
+                  </div>
+                  <div className="ic-qty-foot">ขั้นต่ำ {it.min} {it.unit}</div>
+                </div>
+                {/* Status */}
+                <div className="ic-st"><StatusPill s={s}/></div>
+                {/* Actions */}
+                {canEdit && (
+                  <div className="ic-acts">
+                    <div className="ic-acts-r">
+                      <button className="stepper" onClick={()=>onCount(it.code,-1)} aria-label="ลด"><Icon k="minus" size={14}/></button>
+                      <button className="stepper" onClick={()=>onCount(it.code,+1)} aria-label="เพิ่ม"><Icon k="plus" size={14}/></button>
+                      <button className="btn btn-mini btn-ghost" onClick={()=>onStockIn(it.code)}>รับ</button>
+                      <button className="btn btn-mini btn-primary" onClick={()=>onStockOut(it.code)}>เบิก</button>
+                    </div>
+                    <div className="ic-acts-r" style={{justifyContent:'flex-end'}}>
+                      <button className="btn btn-mini btn-ghost" title="แก้ไข" onClick={()=>setEditItem(it)}>✏️</button>
+                      <button className="btn btn-mini btn-danger" title="ลบ" onClick={()=>{ if(window.confirm(`ลบ "${it.name}" ออกจากคลัง?`)) onDelete(it.code); }}>🗑️</button>
                     </div>
                   </div>
-                </div>
-                <div className="td td-num">
-                  <div className="qty-num"><b>{fmt(it.price||0)}</b></div>
-                  <div className="muted sm">บาท</div>
-                </div>
-                <div className="td td-num td-qty">
-                  <div className="qty-num">
-                    <b className={s==='out'?'bad':''}>{fmt(it.qty)}</b><span className="qty-unit"> {it.unit}</span>
-                  </div>
-                  <div className="qty-bar">
-                    <span style={{ width: `${ratio*100}%`, background: s==='out'?'var(--bad)':s==='low'?'var(--warn)':s==='warn'?'var(--warn-2)':'var(--ok)' }}/>
-                    <span className="qty-min" style={{ left: `${(it.min/(it.min*2.2||1))*100}%` }} title={`ขั้นต่ำ ${it.min}`}/>
-                  </div>
-                </div>
-                <div className="td td-num">
-                  <div className="muted">{it.min} {it.unit}</div>
-                </div>
-                <div className="td td-st"><StatusPill s={s}/></div>
-                {canEdit && (
-                <div className="td td-act">
-                  <button className="stepper" onClick={()=>onCount(it.code, -1)} aria-label="ลด"><Icon k="minus" size={14}/></button>
-                  <button className="stepper" onClick={()=>onCount(it.code, +1)} aria-label="เพิ่ม"><Icon k="plus" size={14}/></button>
-                  <button className="btn btn-mini btn-ghost" onClick={()=>onStockIn(it.code)}>รับ</button>
-                  <button className="btn btn-mini btn-primary" onClick={()=>onStockOut(it.code)}>เบิก</button>
-                  <button className="btn btn-mini btn-ghost" title="แก้ไข" onClick={()=>setEditItem(it)}>✏️</button>
-                  <button className="btn btn-mini btn-danger" title="ลบ" onClick={()=>{ if(window.confirm(`ลบ "${it.name}" ออกจากคลัง?`)) onDelete(it.code); }}>🗑️</button>
-                </div>
                 )}
               </div>
             );
           })}
         </div>
         <div className="tfoot">
-          <span>แสดง {filtered.length} จาก {items.length} รายการ · มูลค่ารวม {fmt(totalValue)} บาท</span>
+          <span>แสดง {filtered.length} จาก {typeItems.length} รายการ · มูลค่ารวม {fmt(totalValue)} บาท</span>
           <div className="pager">
             <button className="pg">‹</button>
             <button className="pg pg-on">1</button>
