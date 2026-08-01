@@ -1182,6 +1182,7 @@ function POScreen({ pos = [], onChange, canEdit, items = [], onReceive }) {
   const [now, setNow] = useS(Date.now());
   const [confirmOd, setConfirmOd] = useS(null);
   const [receiveDate, setReceiveDate] = useS(() => { const t = new Date(); return `${t.getFullYear()+543}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`; });
+  const [expDate, setExpDate] = useS('');
 
   // Real-time tick every 30s (visual cue for "live")
   useE(() => { const t = setInterval(()=>setNow(Date.now()), 30000); return ()=>clearInterval(t); }, []);
@@ -1208,12 +1209,13 @@ function POScreen({ pos = [], onChange, canEdit, items = [], onReceive }) {
     const t = new Date();
     const today = `${t.getFullYear()+543}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`;
     setReceiveDate(today);
+    setExpDate('');
     setConfirmOd(od_no);
   }
 
   function doReceive(p) {
     if (onReceive) {
-      onReceive(p.od_no, receiveDate, p.line_items || []);
+      onReceive(p.od_no, receiveDate, p.line_items || [], expDate);
     } else {
       onChange(pos.map(x => x.od_no===p.od_no ? { ...x, status:'RECEIVED', received_date: receiveDate } : x));
     }
@@ -1286,15 +1288,25 @@ function POScreen({ pos = [], onChange, canEdit, items = [], onReceive }) {
                   <span><Icon k="clock" size={12}/> คาดว่ารับ {p.est_days} วัน</span>
                 </div>
                 {p.od_no === confirmOd && (
-                  <div style={{ marginTop:'10px', padding:'10px 12px', background:'var(--bg)', borderRadius:'10px', display:'flex', gap:'8px', alignItems:'center', flexWrap:'wrap', border:'1px solid var(--bd)' }}>
-                    <span style={{ fontSize:'13px', color:'var(--ink-2)', fontWeight:500, whiteSpace:'nowrap' }}>วันที่รับของ:</span>
-                    <div style={{ flex:'1', minWidth:'160px' }}>
-                      <ThaiDatePicker value={receiveDate} onChange={setReceiveDate}/>
+                  <div style={{ marginTop:'10px', padding:'12px 14px', background:'var(--bg)', borderRadius:'10px', border:'1px solid var(--bd)', display:'flex', flexDirection:'column', gap:'10px' }}>
+                    <div style={{ display:'flex', gap:'8px', alignItems:'center', flexWrap:'wrap' }}>
+                      <span style={{ fontSize:'13px', color:'var(--ink-2)', fontWeight:500, whiteSpace:'nowrap', minWidth:'80px' }}>วันที่รับของ:</span>
+                      <div style={{ flex:'1', minWidth:'160px' }}>
+                        <ThaiDatePicker value={receiveDate} onChange={setReceiveDate}/>
+                      </div>
                     </div>
-                    <button className="btn btn-primary sm" onClick={()=>doReceive(p)}>
-                      <Icon k="check" size={12}/><span>ยืนยัน</span>
-                    </button>
-                    <button className="btn btn-ghost sm" onClick={()=>setConfirmOd(null)}>ยกเลิก</button>
+                    <div style={{ display:'flex', gap:'8px', alignItems:'center', flexWrap:'wrap' }}>
+                      <span style={{ fontSize:'13px', color:'var(--ink-2)', fontWeight:500, whiteSpace:'nowrap', minWidth:'80px' }}>วัน Exp.:</span>
+                      <div style={{ flex:'1', minWidth:'160px' }}>
+                        <ThaiDatePicker value={expDate} onChange={setExpDate} placeholder="ไม่ระบุ"/>
+                      </div>
+                    </div>
+                    <div style={{ display:'flex', gap:'8px' }}>
+                      <button className="btn btn-primary sm" onClick={()=>doReceive(p)}>
+                        <Icon k="check" size={12}/><span>ยืนยัน</span>
+                      </button>
+                      <button className="btn btn-ghost sm" onClick={()=>setConfirmOd(null)}>ยกเลิก</button>
+                    </div>
                   </div>
                 )}
               </div>

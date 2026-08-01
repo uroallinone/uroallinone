@@ -81,7 +81,6 @@ const NAV = [
   { id: 'consumables', label: 'พัสดุสิ้นเปลือง',   icon: 'pkg'  },
   { id: 'equipment',   label: 'ครุภัณฑ์',           icon: 'gear' },
   { id: 'stockout',    label: 'รายการใช้/ตัดสต๊อก', icon: 'out'  },
-  { id: 'stockin',     label: 'รับเข้า',            icon: 'in'   },
   { id: 'remaining',   label: 'พัสดุคงเหลือ',       icon: 'alert'},
   { id: 'po',          label: 'ติดตาม OD',          icon: 'truck'},
   { id: 'reports',     label: 'รายงาน',             icon: 'rep'  },
@@ -160,7 +159,6 @@ function Topbar({ onMenu, query, setQuery, onAddIn, onAddOut, user, onLogout, on
       </div>
 
       <div className="tb-actions">
-        <button className="btn btn-ghost" onClick={onAddIn}><Icon k="in" size={16}/><span>รับเข้า</span></button>
         <button className="btn btn-primary" onClick={onAddOut}><Icon k="out" size={16}/><span>เบิกออก</span></button>
         <button className={cx('cloud-pill', cloudMeta.cls)} title="สถานะฐานข้อมูลกลาง — คลิกเพื่อตั้งค่า" onClick={onSettings}>
           {cloudMeta.dot ? <span className="cloud-dot"></span> : <Icon k={cs==='error'?'alert':'cloudoff'} size={14}/>}

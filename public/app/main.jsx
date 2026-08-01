@@ -323,18 +323,21 @@ function App() {
     setEquipment(arr => arr.filter(e => e.eq_no !== eq_no));
     showToast('ลบครุภัณฑ์ออกจากทะเบียนแล้ว');
   }
-  function handlePOReceive(odNo, receivedDate, lineItems) {
+  function handlePOReceive(odNo, receivedDate, lineItems, expDate) {
     setPos(arr => arr.map(p => p.od_no === odNo ? { ...p, status:'RECEIVED', received_date: receivedDate } : p));
     const batch = (lineItems || [])
       .filter(li => li.code && items.find(i => i.code === li.code))
       .map(li => {
         const it = items.find(i => i.code === li.code);
-        return { code: li.code, name: li.name || it.name, qty: Number(li.qty)||1, unit: li.unit || it.unit, od: odNo };
+        return { code: li.code, name: li.name || it.name, qty: Number(li.qty)||1, unit: li.unit || it.unit, od: odNo, exp: expDate || '' };
       });
     if (batch.length > 0) {
       setItems(arr => arr.map(i => {
         const b = batch.find(x => x.code === i.code);
-        return b ? { ...i, qty: i.qty + b.qty, lot: odNo } : i;
+        if (!b) return i;
+        const next = { ...i, qty: i.qty + b.qty, lot: odNo };
+        if (b.exp) next.exp = b.exp;
+        return next;
       }));
       const now = new Date();
       const ds = now.toISOString().slice(0,10) + ' ' + now.toTimeString().slice(0,5);
@@ -342,7 +345,7 @@ function App() {
         id: `TX-${now.getFullYear().toString().slice(2)}${(now.getMonth()+1).toString().padStart(2,'0')}-${(Math.floor(Math.random()*900)+100)}`,
         date: ds, type: 'IN', code: b.code, name: b.name, qty: b.qty, unit: b.unit,
         by: user?.name || 'ผู้ใช้',
-        note: `OD ${odNo} · รับของ ${receivedDate}`,
+        note: [b.exp && `Exp ${b.exp}`, `OD ${odNo}`, `รับของ ${receivedDate}`].filter(Boolean).join(' · '),
       }));
       setTxns(arr => [...newTxns, ...arr]);
       showToast(`รับของ OD ${odNo} · เติมสต๊อก ${batch.length} รายการแล้ว`);
