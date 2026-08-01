@@ -1582,6 +1582,100 @@ body {
   .ic-groups { padding: 10px; }
 }
 
+/* ================================================================
+   SMC Guide screen — always dark, card grid
+================================================================ */
+.smc-page {
+  background: #0f1623; min-height: 100%; display: flex; flex-direction: column;
+  color: #e2e8f0; font-family: var(--font);
+}
+.smc-topbar {
+  background: #0f1623; padding: 18px 20px 0; position: sticky; top: 0; z-index: 10;
+  border-bottom: 1px solid #1e293b;
+}
+.smc-search-wrap {
+  position: relative; margin-bottom: 12px;
+}
+.smc-search-icon {
+  position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+  color: #64748b; pointer-events: none;
+}
+.smc-search {
+  width: 100%; box-sizing: border-box;
+  background: #1e2a3a; border: 1.5px solid #2d3f55; border-radius: 10px;
+  color: #e2e8f0; font-size: 14px; padding: 11px 14px 11px 40px;
+  outline: none; transition: border-color .15s;
+}
+.smc-search:focus { border-color: #38bdf8; }
+.smc-search::placeholder { color: #475569; }
+.smc-filter-row {
+  display: flex; align-items: center; gap: 8px; padding-bottom: 14px; flex-wrap: wrap;
+}
+.smc-filter-lbl { font-size: 13px; color: #64748b; }
+.smc-pill {
+  padding: 4px 14px; border-radius: 20px; border: 1.5px solid #2d3f55;
+  background: transparent; color: #94a3b8; font-size: 13px; cursor: pointer;
+  transition: all .15s;
+}
+.smc-pill:hover { border-color: #38bdf8; color: #38bdf8; }
+.smc-pill.is-on { background: #0ea5e9; border-color: #0ea5e9; color: #fff; font-weight: 600; }
+.smc-count { margin-left: auto; font-size: 13px; color: #475569; }
+
+/* Grid */
+.smc-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 14px; padding: 18px 20px 24px;
+}
+.smc-empty {
+  grid-column: 1/-1; text-align: center; padding: 60px; color: #475569; font-size: 15px;
+}
+
+/* Card */
+.smc-card {
+  background: #162032; border: 1px solid #1e2d45; border-radius: 12px;
+  padding: 16px; display: flex; flex-direction: column; gap: 0;
+  transition: border-color .15s, transform .12s, box-shadow .15s;
+}
+.smc-card:hover {
+  border-color: #0ea5e9; transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,.4);
+}
+.smc-card-top {
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;
+  margin-bottom: 8px;
+}
+.smc-name {
+  font-size: 15px; font-weight: 700; color: #f1f5f9; line-height: 1.4; flex: 1;
+}
+.smc-total {
+  font-size: 18px; font-weight: 800; color: #34d399; white-space: nowrap; flex-shrink: 0;
+}
+.smc-badges {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 10px;
+}
+.smc-badge {
+  font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 4px;
+}
+.smc-badge.icd   { background: #1e3a5f; color: #7dd3fc; }
+.smc-badge.lt2   { background: #1a3a2a; color: #6ee7b7; }
+.smc-badge.gt2   { background: #3b2a1a; color: #fbbf24; }
+.smc-total-lbl   { font-size: 11px; color: #475569; margin-left: auto; }
+
+.smc-div { height: 1px; background: #1e2d45; margin: 10px 0; }
+
+.smc-fee-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 0;
+}
+.smc-fee-cell { display: flex; flex-direction: column; gap: 2px; }
+.smc-fee-lbl  { font-size: 10.5px; color: #64748b; }
+.smc-fee-val  { font-size: 13px; font-weight: 700; color: #cbd5e1; }
+.smc-fee-val.accent { color: #38bdf8; }
+
+@media (max-width: 600px) {
+  .smc-grid { grid-template-columns: 1fr; padding: 12px; gap: 10px; }
+  .smc-topbar { padding: 12px 12px 0; }
+}
+
 /* ==================================================================
    Equipment table
 ================================================================== */
@@ -1747,6 +1841,7 @@ body {
 <!-- Supabase (auth + central database) — must load before the app modules -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/app/config.js"></script>
+<script src="/app/smc-data.js"></script>
 <script src="/app/uro-supabase.js"></script>
 
 <script type="text/babel" src="/app/tweaks-panel.jsx?v=20260628"></script>

@@ -961,7 +961,7 @@ function ReportsScreen({ items, txns, cats }) {
   );
 }
 
-Object.assign(window, { Dashboard, ItemsScreen, CategoriesScreen, StockMoveScreen, ReportsScreen, EquipmentScreen, POScreen, RemainingScreen, TrendBars });
+Object.assign(window, { Dashboard, ItemsScreen, CategoriesScreen, StockMoveScreen, ReportsScreen, EquipmentScreen, POScreen, RemainingScreen, TrendBars, SMCGuideScreen });
 
 /* ===== TrendBars (12-month / 5-year) ===== */
 function TrendBars({ data, big }) {
@@ -1969,6 +1969,96 @@ function RemainingScreen({ items, cats, onStockIn }) {
           )}
         </div>
       </section>
+    </div>
+  );
+}
+
+/* ===== SMC Guide screen ===== */
+function SMCGuideScreen() {
+  const [q, setQ] = useS('');
+  const [tab, setTab] = useS('all');
+
+  const data = (window.SMC_DATA || []);
+  const f = data.filter(d => {
+    const matchTab = tab === 'all' || d.t === tab;
+    const matchQ = !q || d.name.toLowerCase().includes(q.toLowerCase()) || d.icd9.includes(q);
+    return matchTab && matchQ;
+  });
+
+  const b = n => n ? `฿${n.toLocaleString()}` : '฿0';
+
+  return (
+    <div className="smc-page">
+      <div className="smc-topbar">
+        <div className="smc-search-wrap">
+          <Icon k="search" size={16} className="smc-search-icon"/>
+          <input
+            className="smc-search"
+            placeholder="พิมพ์ชื่อการผ่าตัด เช่น TUR-P, Nephrectomy, Cystoscopy, ICD9…"
+            value={q} onChange={e=>setQ(e.target.value)}
+          />
+        </div>
+        <div className="smc-filter-row">
+          <span className="smc-filter-lbl">เวลา:</span>
+          {[['all','ทั้งหมด'],['lt2','< 2 ชม.'],['gt2','> 2 ชม.']].map(([v,l])=>(
+            <button key={v} className={cx('smc-pill', tab===v&&'is-on')} onClick={()=>setTab(v)}>{l}</button>
+          ))}
+          <span className="smc-count">{f.length} รายการ</span>
+        </div>
+      </div>
+
+      <div className="smc-grid">
+        {f.map((d,i) => (
+          <div key={i} className="smc-card">
+            <div className="smc-card-top">
+              <div className="smc-name">{d.name}</div>
+              <div className="smc-total">{b(d.total)}</div>
+            </div>
+            <div className="smc-badges">
+              <span className="smc-badge icd">ICD9 {d.icd9}</span>
+              <span className={cx('smc-badge', d.t==='gt2'?'gt2':'lt2')}>{d.t==='gt2'?'OR >2hr':'OR <2hr'}</span>
+              <span className="smc-total-lbl">รวมชำระ CRH</span>
+            </div>
+
+            <div className="smc-div"/>
+
+            <div className="smc-fee-grid">
+              <div className="smc-fee-cell">
+                <div className="smc-fee-lbl">ค่าห้องผ่าตัด</div>
+                <div className="smc-fee-val">{b(d.room)}</div>
+              </div>
+              <div className="smc-fee-cell">
+                <div className="smc-fee-lbl">DF Sx CRH</div>
+                <div className="smc-fee-val">{b(d.dfSx)}</div>
+              </div>
+              <div className="smc-fee-cell">
+                <div className="smc-fee-lbl">DF Anes CRH</div>
+                <div className="smc-fee-val">{b(d.dfAnes)}</div>
+              </div>
+            </div>
+
+            <div className="smc-div"/>
+
+            <div className="smc-fee-grid">
+              <div className="smc-fee-cell">
+                <div className="smc-fee-lbl">Scrub Nurse</div>
+                <div className="smc-fee-val accent">{b(d.scrub)}</div>
+              </div>
+              <div className="smc-fee-cell">
+                <div className="smc-fee-lbl">Anes Nurse</div>
+                <div className="smc-fee-val accent">{b(d.anesN)}</div>
+              </div>
+              <div className="smc-fee-cell">
+                <div className="smc-fee-lbl">Nurse Aid</div>
+                <div className="smc-fee-val accent">{b(d.nurseAid)}</div>
+              </div>
+            </div>
+          </div>
+        ))}
+        {f.length === 0 && (
+          <div className="smc-empty">ไม่พบรายการที่ตรงกับการค้นหา</div>
+        )}
+      </div>
     </div>
   );
 }
