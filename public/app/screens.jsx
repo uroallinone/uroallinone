@@ -1020,9 +1020,9 @@ function EquipmentScreen({ equipment, canEdit, onAddEquipment, onEditEquipment, 
     return { ...e, years: yrs, badge: ageBadge(yrs) };
   });
 
-  const filtered = enriched.filter(e =>
-    filter==='all' ? true : filter==='alert' ? e.years >= 5 : e.years < 5
-  );
+  const filtered = enriched
+    .filter(e => filter==='all' ? true : filter==='alert' ? e.years >= 5 : e.years < 5)
+    .sort((a, b) => b.years - a.years);
   const overdue = enriched.filter(e => e.years >= 5).length;
   const totalCost = enriched.reduce((s,e)=>s+e.cost,0);
 
