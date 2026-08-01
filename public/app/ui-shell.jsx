@@ -83,7 +83,6 @@ const NAV = [
   { id: 'stockout',    label: 'รายการใช้/ตัดสต๊อก', icon: 'out'  },
   { id: 'remaining',   label: 'พัสดุคงเหลือ',       icon: 'alert'},
   { id: 'po',          label: 'ติดตาม OD',          icon: 'truck'},
-  { id: 'reports',     label: 'รายงาน',             icon: 'rep'  },
   { id: 'guide',       label: 'คู่มือส่งเครื่องมือ', icon: 'book' },
 ];
 
@@ -139,7 +138,7 @@ function Sidebar({ active, onNav, open, onClose, collapsed, user, onLogout }) {
 }
 
 /* ---------- Topbar ---------- */
-function Topbar({ onMenu, query, setQuery, onAddIn, onAddOut, user, onLogout, onSettings, cloud }) {
+function Topbar({ onMenu, query, setQuery, onAddIn, onAddOut, onReports, user, onLogout, onSettings, cloud }) {
   const cs = cloud?.state || 'off';
   const cloudMeta = {
     live:       { cls:'is-live', dot:true,  label:'คลาวด์' },
@@ -159,6 +158,7 @@ function Topbar({ onMenu, query, setQuery, onAddIn, onAddOut, user, onLogout, on
       </div>
 
       <div className="tb-actions">
+        <button className="btn btn-ghost" onClick={onReports}><Icon k="rep" size={16}/><span>รายงาน</span></button>
         <button className="btn btn-primary" onClick={onAddOut}><Icon k="out" size={16}/><span>เบิกออก</span></button>
         <button className={cx('cloud-pill', cloudMeta.cls)} title="สถานะฐานข้อมูลกลาง — คลิกเพื่อตั้งค่า" onClick={onSettings}>
           {cloudMeta.dot ? <span className="cloud-dot"></span> : <Icon k={cs==='error'?'alert':'cloudoff'} size={14}/>}

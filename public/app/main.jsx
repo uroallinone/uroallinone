@@ -428,7 +428,7 @@ function App() {
       <Sidebar active={route} onNav={go} open={drawer} onClose={()=>setDrawer(false)} collapsed={false} user={user} onLogout={logout}/>
       <div className="main">
         <Topbar onMenu={()=>setDrawer(true)} query={query} setQuery={setQuery}
-                onAddIn={()=>go('stockin')} onAddOut={()=>go('stockout')} user={user} onLogout={logout}
+                onAddIn={()=>go('stockin')} onAddOut={()=>go('stockout')} onReports={()=>go('reports')} user={user} onLogout={logout}
                 cloud={cloud} onSettings={()=>setSettingsOpen(true)}/>
         <div className="content">{screen}</div>
       </div>
