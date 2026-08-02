@@ -9,5 +9,7 @@ window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXB
 */
 window.URO_USERS = [
   { username: 'Baheang',  password: '46590024166', name: 'Baheang', role: 'admin'  },
-  { username: 'test',     password: '12345678',     name: 'test',    role: 'viewer' },
+  { username: 'test',     password: '12345678',     name: 'test',    role: 'viewer' }, 
+  { username: 'Baheang', password: '46590024', name: 'ปิยะพงษ์ ปงลังกา', role: 'viewer' },
 ];
+  
