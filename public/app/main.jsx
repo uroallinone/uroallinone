@@ -431,7 +431,7 @@ function App() {
       <div className="main">
         <Topbar onMenu={()=>setDrawer(true)} query={query} setQuery={setQuery}
                 onAddIn={()=>go('stockin')} onAddOut={()=>go('stockout')} onReports={()=>go('reports')} user={user} onLogout={logout}
-                cloud={cloud} onSettings={()=>setSettingsOpen(true)}/>
+                cloud={cloud} onSettings={()=>setSettingsOpen(true)} items={items} onGo={go}/>
         <div className="content">{screen}</div>
       </div>
       <BottomNav active={route} onNav={go}/>

@@ -140,7 +140,7 @@ function Sidebar({ active, onNav, open, onClose, collapsed, user, onLogout }) {
 }
 
 /* ---------- Topbar ---------- */
-function Topbar({ onMenu, query, setQuery, onAddIn, onAddOut, onReports, user, onLogout, onSettings, cloud }) {
+function Topbar({ onMenu, query, setQuery, onAddIn, onAddOut, onReports, user, onLogout, onSettings, cloud, items=[], onGo }) {
   const cs = cloud?.state || 'off';
   const cloudMeta = {
     live:       { cls:'is-live', dot:true,  label:'คลาวด์' },
@@ -148,6 +148,28 @@ function Topbar({ onMenu, query, setQuery, onAddIn, onAddOut, onReports, user, o
     error:      { cls:'is-err',  dot:false, label:'คลาวด์ขัดข้อง' },
     off:        { cls:'is-off',  dot:false, label:'เฉพาะเครื่องนี้' },
   }[cs] || { cls:'is-off', dot:false, label:'เฉพาะเครื่องนี้' };
+
+  const [showNotif, setShowNotif] = useS(false);
+  const notifRef = useR(null);
+
+  const alerts = items.filter(i => statusOf(i) !== 'ok')
+    .sort((a,b) => {
+      const rank = { out:0, low:1, warn:2 };
+      return (rank[statusOf(a)]||3) - (rank[statusOf(b)]||3);
+    });
+  const outItems  = alerts.filter(i => statusOf(i) === 'out');
+  const lowItems  = alerts.filter(i => statusOf(i) === 'low');
+  const warnItems = alerts.filter(i => statusOf(i) === 'warn');
+
+  useE(() => {
+    if (!showNotif) return;
+    function handleClick(e) {
+      if (notifRef.current && !notifRef.current.contains(e.target)) setShowNotif(false);
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [showNotif]);
+
   return (
     <header className="topbar">
       <button className="tb-menu" onClick={onMenu} aria-label="เปิดเมนู"><Icon k="menu" size={22}/></button>
@@ -169,10 +191,66 @@ function Topbar({ onMenu, query, setQuery, onAddIn, onAddOut, onReports, user, o
           <span className="cloud-pill-t">{cloudMeta.label}</span>
         </button>
         <button className="tb-icon" title="ตั้งค่า / ข้อมูล" onClick={onSettings}><Icon k="gear" size={20}/></button>
-        <button className="tb-icon" title="แจ้งเตือน">
-          <Icon k="bell" size={20}/>
-          <span className="tb-badge">4</span>
-        </button>
+
+        <div style={{position:'relative'}} ref={notifRef}>
+          <button className="tb-icon" title="แจ้งเตือน" onClick={()=>setShowNotif(v=>!v)}>
+            <Icon k="bell" size={20}/>
+            {alerts.length > 0 && <span className="tb-badge">{alerts.length}</span>}
+          </button>
+          {showNotif && (
+            <div className="notif-panel">
+              <div className="notif-head">
+                <span className="notif-title">แจ้งเตือนสต๊อก</span>
+                <button className="notif-close" onClick={()=>setShowNotif(false)}>✕</button>
+              </div>
+              {alerts.length === 0 && (
+                <div className="notif-empty">ทุกรายการอยู่ในเกณฑ์ปกติ ✓</div>
+              )}
+              {outItems.length > 0 && (
+                <div className="notif-group">
+                  <div className="notif-group-label notif-out">หมดสต๊อก ({outItems.length})</div>
+                  {outItems.slice(0,5).map(i => (
+                    <div key={i.code} className="notif-row" onClick={()=>{ setShowNotif(false); onGo && onGo('remaining'); }}>
+                      <span className="notif-dot notif-dot-out"/>
+                      <span className="notif-name">{i.name}</span>
+                      <span className="notif-qty bad">0 / {i.min} {i.unit}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {lowItems.length > 0 && (
+                <div className="notif-group">
+                  <div className="notif-group-label notif-low">ใกล้หมด ({lowItems.length})</div>
+                  {lowItems.slice(0,5).map(i => (
+                    <div key={i.code} className="notif-row" onClick={()=>{ setShowNotif(false); onGo && onGo('remaining'); }}>
+                      <span className="notif-dot notif-dot-low"/>
+                      <span className="notif-name">{i.name}</span>
+                      <span className="notif-qty" style={{color:'#c2410c'}}>{i.qty} / {i.min} {i.unit}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {warnItems.length > 0 && (
+                <div className="notif-group">
+                  <div className="notif-group-label notif-warn">ใกล้ขั้นต่ำ ({warnItems.length})</div>
+                  {warnItems.slice(0,5).map(i => (
+                    <div key={i.code} className="notif-row" onClick={()=>{ setShowNotif(false); onGo && onGo('remaining'); }}>
+                      <span className="notif-dot notif-dot-warn"/>
+                      <span className="notif-name">{i.name}</span>
+                      <span className="notif-qty" style={{color:'var(--warn)'}}>{i.qty} / {i.min} {i.unit}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="notif-foot">
+                <button className="notif-all-btn" onClick={()=>{ setShowNotif(false); onGo && onGo('remaining'); }}>
+                  ดูรายการทั้งหมด →
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
         <div className="tb-user">
           <div className="tb-avatar">{user?.initials || 'ปย'}</div>
           <div className="tb-user-text">
