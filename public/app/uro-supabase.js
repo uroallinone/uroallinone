@@ -47,43 +47,91 @@
         sessionStorage.setItem('uro_session', JSON.stringify(profile));
         return profile;
       }
-      // Also check server-approved signup requests (login with email + generated password)
-      try {
-        const res = await fetch('/api/signup');
-        if (res.ok) {
-          const reqs = await res.json();
-          const approved = reqs.find(r =>
-            r.status === 'approved' &&
-            r.email.toLowerCase() === String(username).toLowerCase().trim() &&
-            r.password === password
-          );
-          if (approved) {
-            const profile = {
-              id: approved.id, name: approved.name, email: approved.email,
-              role: approved.role || 'viewer',
-              initials: (approved.name[0] || '?').toUpperCase(),
-            };
-            sessionStorage.setItem('uro_session', JSON.stringify(profile));
-            return profile;
-          }
-        }
-      } catch (_) { /* server may not be available — fall through */ }
+      // Check approved signup requests — local server first, then Supabase
+      const reqs = await _getSignups().catch(() => []);
+      const approved = reqs.find(r =>
+        r.status === 'approved' &&
+        r.email.toLowerCase() === String(username).toLowerCase().trim() &&
+        r.password === password
+      );
+      if (approved) {
+        const profile = {
+          id: approved.id, name: approved.name, email: approved.email,
+          role: approved.role || 'viewer',
+          initials: (approved.name[0] || '?').toUpperCase(),
+        };
+        sessionStorage.setItem('uro_session', JSON.stringify(profile));
+        return profile;
+      }
       throw new Error('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
     },
     async signOut() {
       sessionStorage.removeItem('uro_session');
     },
+    getSignups: () => _getSignups(),
     async submitSignup(name, email, department) {
-      const res = await fetch('/api/signup', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ name, email, department }),
+      // Try local server first
+      try {
+        const res = await fetch('/api/signup', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ name, email, department }),
+        });
+        const body = await res.json().catch(() => ({}));
+        if (res.ok) return body;
+        throw new Error(body.error || 'ส่งคำขอไม่สำเร็จ');
+      } catch (e) {
+        if (e.message === 'ส่งคำขอไม่สำเร็จ' || e.message.includes('ต้องระบุ')) throw e;
+      }
+      // Fallback: Supabase
+      if (!client) throw new Error('ไม่สามารถส่งคำขอได้ (ไม่มีการเชื่อมต่อ)');
+      const id = 'req-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+      const { error } = await client.from('signup_requests').insert({
+        id, name: name.trim(), email: email.trim().toLowerCase(),
+        department: (department || '').trim(),
+        status: 'pending', password: '', role: 'viewer',
+        created_at: new Date().toISOString(), updated_at: '',
       });
-      const body = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(body.error || 'ส่งคำขอไม่สำเร็จ');
-      return body;
+      if (error) throw new Error(error.message || 'ส่งคำขอไม่สำเร็จ');
+      return { ok: true, id };
+    },
+    async approveSignup(id, status, role) {
+      // Try local server first
+      try {
+        const res = await fetch(`/api/signup/${id}`, {
+          method: 'PUT',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ status, role }),
+        });
+        const body = await res.json().catch(() => ({}));
+        if (res.ok) return body;
+      } catch (_) {}
+      // Fallback: Supabase
+      if (!client) throw new Error('ไม่มีการเชื่อมต่อ');
+      let password = '';
+      if (status === 'approved') {
+        const c = 'abcdefghjkmnpqrstuvwxyz23456789';
+        password = Array.from({ length: 8 }, () => c[Math.floor(Math.random() * c.length)]).join('');
+      }
+      const { error } = await client.from('signup_requests').update({
+        status, password, role: role || 'viewer', updated_at: new Date().toISOString(),
+      }).eq('id', id);
+      if (error) throw new Error(error.message);
+      return { ok: true, password };
     },
   };
+
+  async function _getSignups() {
+    try {
+      const res = await fetch('/api/signup');
+      if (res.ok) return await res.json();
+    } catch (_) {}
+    if (client) {
+      const { data } = await client.from('signup_requests').select('*').order('created_at', { ascending: false });
+      return data || [];
+    }
+    return [];
+  }
 
   /* ---------------- data sync ---------------- */
   const ROW_ID = 1;

@@ -424,24 +424,20 @@ function SignupRequestsSection({ user }) {
   const [approvedPwd, setApprovedPwd] = useS(null); // { name, password }
 
   useE(() => {
-    fetch('/api/signup')
-      .then(r => r.json())
+    UroAuth.getSignups()
       .then(d => { setReqs(d); setLoading(false); })
       .catch(() => { setReqs([]); setLoading(false); });
   }, []);
 
   async function decide(id, name, status, role) {
-    const res = await fetch(`/api/signup/${id}`, {
-      method: 'PUT',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ status, role: role || 'viewer' }),
-    });
-    const body = await res.json();
-    if (status === 'approved' && body.password) {
-      setApprovedPwd({ name, password: body.password });
-    }
+    try {
+      const body = await UroAuth.approveSignup(id, status, role || 'viewer');
+      if (status === 'approved' && body.password) {
+        setApprovedPwd({ name, password: body.password });
+      }
+    } catch (e) { alert(e.message); }
     // Refresh list
-    fetch('/api/signup').then(r=>r.json()).then(d=>setReqs(d));
+    UroAuth.getSignups().then(d => setReqs(d)).catch(() => {});
   }
 
   const pending  = (reqs||[]).filter(r=>r.status==='pending');
