@@ -2078,23 +2078,140 @@ function RemainingScreen({ items, cats, onStockIn }) {
   );
 }
 
+/* ===== SMC Edit Modal ===== */
+const SMC_FIELDS = [
+  { key:'room',     label:'ค่าห้องผ่าตัด', accent:false },
+  { key:'dfSx',    label:'DF Sx',           accent:false },
+  { key:'dfAnes',  label:'DF Anes',         accent:false },
+  { key:'scrub',   label:'Scrub Nurse',     accent:true  },
+  { key:'anesN',   label:'Anes Nurse',      accent:true  },
+  { key:'nurseAid',label:'Nurse Aid',       accent:true  },
+];
+const SMC_SITS = ['crh','ins','th'];
+const SMC_SIT_LBL = { crh:'CRH', ins:'Insurance', th:'ต่างชาติ' };
+
+function SMCEditModal({ item, override, onSave, onClose }) {
+  const initPrices = sit => {
+    const src = item[sit] || {};
+    const ov  = override?.[sit] || {};
+    const merged = {};
+    SMC_FIELDS.forEach(f => { merged[f.key] = ov[f.key] ?? src[f.key] ?? 0; });
+    return merged;
+  };
+  const [codes,  setCodes]  = useS(() => ({ room:'', dfSx:'', dfAnes:'', scrub:'', anesN:'', nurseAid:'', ...(override?.codes || {}) }));
+  const [prices, setPrices] = useS(() => ({ crh: initPrices('crh'), ins: initPrices('ins'), th: initPrices('th') }));
+
+  const setPrice = (sit, key, val) =>
+    setPrices(p => ({ ...p, [sit]: { ...p[sit], [key]: parseInt(val) || 0 } }));
+  const getTotal = sit => SMC_FIELDS.reduce((s, f) => s + (prices[sit][f.key] || 0), 0);
+
+  const save = () => onSave({
+    codes,
+    crh: { ...prices.crh, total: getTotal('crh') },
+    ins: { ...prices.ins, total: getTotal('ins') },
+    th:  { ...prices.th,  total: getTotal('th')  },
+  });
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="smc-edit-modal" onClick={e => e.stopPropagation()}>
+        <div className="smc-edit-head">
+          <div>
+            <div className="smc-edit-title">{item.name}</div>
+            <div style={{ fontSize:'12px', color:'#64748b', marginTop:'2px' }}>ICD9 {item.icd9} · {item.t==='lt2'?'OR <2hr':'OR >2hr'}</div>
+          </div>
+          <button className="smc-edit-close" onClick={onClose}>✕</button>
+        </div>
+
+        <div className="smc-edit-table">
+          {/* header */}
+          <div className="smc-edit-hdr">
+            <div>รายการ</div>
+            <div>Code</div>
+            {SMC_SITS.map(s => <div key={s}>{SMC_SIT_LBL[s]}</div>)}
+          </div>
+          {/* rows */}
+          {SMC_FIELDS.map(f => (
+            <div key={f.key} className="smc-edit-row">
+              <div className={cx('smc-edit-lbl', f.accent && 'accent-lbl')}>{f.label}</div>
+              <div>
+                <input className="smc-inp smc-inp-code"
+                  value={codes[f.key]}
+                  onChange={e => setCodes(c => ({ ...c, [f.key]: e.target.value }))}
+                  placeholder="—"/>
+              </div>
+              {SMC_SITS.map(sit => (
+                <div key={sit}>
+                  <input className="smc-inp smc-inp-num" type="number" min="0"
+                    value={prices[sit][f.key] ?? 0}
+                    onChange={e => setPrice(sit, f.key, e.target.value)}/>
+                </div>
+              ))}
+            </div>
+          ))}
+          {/* total */}
+          <div className="smc-edit-row smc-edit-total-row">
+            <div style={{ fontWeight:700, color:'#f1f5f9' }}>รวม</div>
+            <div/>
+            {SMC_SITS.map(sit => (
+              <div key={sit} style={{ fontWeight:800, color:'#22d3ee', fontSize:'15px' }}>
+                ฿{getTotal(sit).toLocaleString()}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="smc-edit-foot">
+          <button className="btn btn-ghost" onClick={onClose}>ยกเลิก</button>
+          <button className="btn btn-primary" onClick={save}>บันทึก</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ===== SMC Guide screen ===== */
-function SMCGuideScreen() {
+function SMCGuideScreen({ user }) {
   const [q, setQ] = useS('');
   const [sitthi, setSitthi] = useS('crh');
   const [time, setTime] = useS('all');
+  const [overrides, setOverrides] = useS(() => {
+    try { return JSON.parse(localStorage.getItem('uro_smc_overrides') || '{}'); }
+    catch { return {}; }
+  });
+  const [editIdx, setEditIdx] = useS(null);
 
+  const canEdit = user?.role === 'admin';
   const SITTHI = [['crh','CRH'],['ins','Insurance'],['th','ต่างชาติ']];
   const SITTHI_LBL = { crh:'CRH', ins:'Insurance', th:'ต่างชาติ' };
 
-  const data = (window.SMC_DATA || []);
-  const f = data.filter(d => {
+  const rawData = window.SMC_DATA || [];
+  const data = rawData.map((d, i) => {
+    const ov = overrides[i];
+    if (!ov) return d;
+    return {
+      ...d,
+      _codes: ov.codes || {},
+      crh: { ...d.crh, ...ov.crh },
+      ins: { ...d.ins, ...ov.ins },
+      th:  { ...d.th,  ...ov.th  },
+    };
+  });
+
+  const f = data.map((d, i) => ({ ...d, _origIdx: i })).filter(d => {
     const matchTime = time === 'all' || d.t === time;
     const matchQ = !q || d.name.toLowerCase().includes(q.toLowerCase()) || d.icd9.includes(q);
     return matchTime && matchQ;
   });
 
   const b = n => n ? `฿${n.toLocaleString()}` : '฿0';
+
+  const saveOverride = (idx, ovData) => {
+    const next = { ...overrides, [idx]: ovData };
+    setOverrides(next);
+    localStorage.setItem('uro_smc_overrides', JSON.stringify(next));
+    setEditIdx(null);
+  };
 
   return (
     <div className="smc-page">
@@ -2123,13 +2240,30 @@ function SMCGuideScreen() {
       </div>
 
       <div className="smc-grid">
-        {f.map((d,i) => {
-          const s = d[sitthi] || {};
+        {f.map((d, fi) => {
+          const idx = d._origIdx;
+          const s     = d[sitthi] || {};
+          const codes = d._codes  || {};
+          const FEE1 = [
+            { key:'room',    label:'ค่าห้องผ่าตัด', accent:false },
+            { key:'dfSx',   label:'DF Sx',           accent:false },
+            { key:'dfAnes', label:'DF Anes',          accent:false },
+          ];
+          const FEE2 = [
+            { key:'scrub',    label:'Scrub Nurse', accent:true },
+            { key:'anesN',    label:'Anes Nurse',  accent:true },
+            { key:'nurseAid', label:'Nurse Aid',   accent:true },
+          ];
           return (
-            <div key={i} className="smc-card">
+            <div key={fi} className="smc-card">
               <div className="smc-card-top">
                 <div className="smc-name">{d.name}</div>
-                <div className="smc-total">{b(s.total)}</div>
+                <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
+                  <div className="smc-total">{b(s.total)}</div>
+                  {canEdit && (
+                    <button className="smc-edit-btn" title="แก้ไขราคา" onClick={()=>setEditIdx(idx)}>✏️</button>
+                  )}
+                </div>
               </div>
               <div className="smc-badges">
                 <span className="smc-badge icd">ICD9 {d.icd9}</span>
@@ -2140,35 +2274,25 @@ function SMCGuideScreen() {
               <div className="smc-div"/>
 
               <div className="smc-fee-grid">
-                <div className="smc-fee-cell">
-                  <div className="smc-fee-lbl">ค่าห้องผ่าตัด</div>
-                  <div className="smc-fee-val">{b(s.room)}</div>
-                </div>
-                <div className="smc-fee-cell">
-                  <div className="smc-fee-lbl">DF Sx</div>
-                  <div className="smc-fee-val">{b(s.dfSx)}</div>
-                </div>
-                <div className="smc-fee-cell">
-                  <div className="smc-fee-lbl">DF Anes</div>
-                  <div className="smc-fee-val">{b(s.dfAnes)}</div>
-                </div>
+                {FEE1.map(f => (
+                  <div key={f.key} className="smc-fee-cell">
+                    <div className="smc-fee-lbl">{f.label}</div>
+                    <div className={cx('smc-fee-val', f.accent && 'accent')}>{b(s[f.key])}</div>
+                    {codes[f.key] && <div className="smc-code">{codes[f.key]}</div>}
+                  </div>
+                ))}
               </div>
 
               <div className="smc-div"/>
 
               <div className="smc-fee-grid">
-                <div className="smc-fee-cell">
-                  <div className="smc-fee-lbl">Scrub Nurse</div>
-                  <div className="smc-fee-val accent">{b(s.scrub)}</div>
-                </div>
-                <div className="smc-fee-cell">
-                  <div className="smc-fee-lbl">Anes Nurse</div>
-                  <div className="smc-fee-val accent">{b(s.anesN)}</div>
-                </div>
-                <div className="smc-fee-cell">
-                  <div className="smc-fee-lbl">Nurse Aid</div>
-                  <div className="smc-fee-val accent">{b(s.nurseAid)}</div>
-                </div>
+                {FEE2.map(f => (
+                  <div key={f.key} className="smc-fee-cell">
+                    <div className="smc-fee-lbl">{f.label}</div>
+                    <div className={cx('smc-fee-val', f.accent && 'accent')}>{b(s[f.key])}</div>
+                    {codes[f.key] && <div className="smc-code">{codes[f.key]}</div>}
+                  </div>
+                ))}
               </div>
             </div>
           );
@@ -2177,6 +2301,15 @@ function SMCGuideScreen() {
           <div className="smc-empty">ไม่พบรายการที่ตรงกับการค้นหา</div>
         )}
       </div>
+
+      {editIdx !== null && (
+        <SMCEditModal
+          item={rawData[editIdx]}
+          override={overrides[editIdx]}
+          onSave={ovData => saveOverride(editIdx, ovData)}
+          onClose={() => setEditIdx(null)}
+        />
+      )}
     </div>
   );
 }

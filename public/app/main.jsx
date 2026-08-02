@@ -408,7 +408,7 @@ function App() {
       case 'reports':
         return <ReportsScreen items={items} txns={txns} cats={URO_CATEGORIES}/>;
       case 'smcguide':
-        return <SMCGuideScreen/>;
+        return <SMCGuideScreen user={user}/>;
       case 'guide':
         return <GuideScreen/>;
       default: return null;
