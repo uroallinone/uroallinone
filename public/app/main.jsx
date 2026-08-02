@@ -434,7 +434,7 @@ function App() {
                 cloud={cloud} onSettings={()=>setSettingsOpen(true)}/>
         <div className="content">{screen}</div>
       </div>
-      <BottomNav active={route} onNav={go} onMenu={()=>setDrawer(true)}/>
+      <BottomNav active={route} onNav={go}/>
       {settingsOpen && (
         <SettingsModal user={user} items={items} txns={txns} equipment={equipment}
           cloud={cloud} onCloudConnect={cloudConnect} onCloudDisconnect={cloudDisconnect}

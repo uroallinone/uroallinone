@@ -1,6 +1,124 @@
 /* Screens — Dashboard, Items, Categories, StockIn, StockOut, Reports */
 const { useState: useS, useEffect: useE, useMemo: useM, useRef: useR } = React;
 
+/* ===== Mobile Dashboard (≤720px) ===== */
+function MobileDashboard({ items, txns, onGo }) {
+  const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
+
+  const recentOuts = txns
+    .filter(t => t.type === 'OUT' && new Date(t.date).getTime() >= cutoff)
+    .sort((a, b) => new Date(b.date) - new Date(a.date))
+    .slice(0, 12);
+
+  const restockItems = items
+    .filter(i => statusOf(i) !== 'ok')
+    .sort((a, b) => {
+      const rank = { out: 0, low: 1, warn: 2 };
+      return (rank[statusOf(a)] || 3) - (rank[statusOf(b)] || 3);
+    });
+
+  const today = new Date().toLocaleDateString('th-TH', { weekday:'long', day:'numeric', month:'long' });
+
+  const S_COLOR = { warn:'#92400e', low:'#c2410c', out:'#991b1b' };
+  const S_BG    = { warn:'#fef3c7', low:'#fff7ed', out:'#fee2e2' };
+  const S_LABEL = { warn:'เตือน', low:'ใกล้หมด', out:'หมด' };
+
+  const MENUS = [
+    { id:'items',       label:'พัสดุหลัก',   icon:'box'     },
+    { id:'consumables', label:'สิ้นเปลือง',  icon:'pkg'     },
+    { id:'equipment',   label:'ครุภัณฑ์',    icon:'gear'    },
+    { id:'stockout',    label:'เบิกใช้',      icon:'out'     },
+    { id:'remaining',   label:'คงเหลือ',      icon:'alert'   },
+    { id:'po',          label:'OD',           icon:'truck'   },
+    { id:'smcguide',    label:'SMC',          icon:'receipt' },
+    { id:'guide',       label:'คู่มือ',       icon:'book'    },
+  ];
+
+  return (
+    <div className="mh-wrap">
+      {/* Header */}
+      <div className="mh-hero">
+        <div className="mh-date">{today}</div>
+        <div className="mh-title">ภาพรวมพัสดุ</div>
+      </div>
+
+      {/* Stat pills */}
+      <div className="mh-stats">
+        <div className="mh-stat">
+          <div className="mh-stat-n">{items.length}</div>
+          <div className="mh-stat-l">รายการ</div>
+        </div>
+        <div className="mh-stat mh-stat--warn">
+          <div className="mh-stat-n">{restockItems.filter(i=>statusOf(i)==='out').length}</div>
+          <div className="mh-stat-l">หมดสต๊อก</div>
+        </div>
+        <div className="mh-stat mh-stat--amber">
+          <div className="mh-stat-n">{restockItems.filter(i=>statusOf(i)!=='out').length}</div>
+          <div className="mh-stat-l">ใกล้หมด</div>
+        </div>
+        <div className="mh-stat">
+          <div className="mh-stat-n">{recentOuts.length}</div>
+          <div className="mh-stat-l">เบิก 7 วัน</div>
+        </div>
+      </div>
+
+      {/* Restock */}
+      {restockItems.length > 0 && (
+        <section className="mh-section">
+          <div className="mh-sec-head">
+            <span className="mh-sec-title">⚠️ ต้องเติมสต๊อก</span>
+            <button className="mh-sec-link" onClick={()=>onGo('remaining')}>ดูทั้งหมด →</button>
+          </div>
+          {restockItems.slice(0, 8).map(it => {
+            const s = statusOf(it);
+            return (
+              <div key={it.code} className="mh-row" onClick={()=>onGo('items')}>
+                <div className="mh-row-name">{it.name}</div>
+                <div className="mh-row-r">
+                  <span className="mh-qty">{it.qty}<span className="mh-unit"> / {it.min} {it.unit}</span></span>
+                  <span className="mh-badge" style={{ background: S_BG[s], color: S_COLOR[s] }}>{S_LABEL[s]}</span>
+                </div>
+              </div>
+            );
+          })}
+        </section>
+      )}
+
+      {/* Recent usage */}
+      <section className="mh-section">
+        <div className="mh-sec-head">
+          <span className="mh-sec-title">📋 เบิกใช้ 7 วันที่ผ่านมา</span>
+          <button className="mh-sec-link" onClick={()=>onGo('stockout')}>เบิกใหม่ →</button>
+        </div>
+        {recentOuts.length === 0 ? (
+          <div className="mh-empty">ยังไม่มีรายการเบิกใช้ในช่วง 7 วัน</div>
+        ) : recentOuts.map(t => (
+          <div key={t.id} className="mh-row">
+            <div className="mh-row-info">
+              <div className="mh-row-name">{t.name}</div>
+              <div className="mh-row-meta">{(t.date||'').slice(5).replace('-','/')} · {t.by}</div>
+            </div>
+            <div className="mh-qty-out">−{Math.abs(t.qty)} {t.unit}</div>
+          </div>
+        ))}
+      </section>
+
+      {/* Menu grid */}
+      <section className="mh-section">
+        <div className="mh-sec-head"><span className="mh-sec-title">เมนูหลัก</span></div>
+        <div className="mh-menu-grid">
+          {MENUS.map(m => (
+            <button key={m.id} className="mh-menu-card" onClick={()=>onGo(m.id)}>
+              <div className="mh-menu-icon"><Icon k={m.icon} size={28}/></div>
+              <div className="mh-menu-label">{m.label}</div>
+            </button>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}
+
 /* ===== Dashboard ===== */
 function Dashboard({ items, txns, burn, month, year, cats, onGo, onStockIn, onStockOut }) {
   const [range, setRange] = useS('day');  // day | month | year
@@ -41,7 +159,9 @@ function Dashboard({ items, txns, burn, month, year, cats, onGo, onStockIn, onSt
   }, [range, burn, month, year, cats]);
 
   return (
-    <div className="page">
+    <>
+    <div className="mobile-only"><MobileDashboard items={items} txns={txns} onGo={onGo}/></div>
+    <div className="desktop-only page">
       <div className="page-head">
         <div>
           <div className="eyebrow">แดชบอร์ดสต๊อก</div>
@@ -176,6 +296,7 @@ function Dashboard({ items, txns, burn, month, year, cats, onGo, onStockIn, onSt
         </section>
       </div>
     </div>
+    </>
   );
 }
 

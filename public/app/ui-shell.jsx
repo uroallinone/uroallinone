@@ -573,21 +573,25 @@ function SettingsModal({ user, items, txns, equipment, cloud, onCloudConnect, on
 
 /* ---------- Bottom nav bar (mobile ≤720px) ---------- */
 const BOTTOM_NAV = [
-  { id: 'dashboard', label: 'หน้าหลัก', icon: 'dash'    },
-  { id: 'items',     label: 'พัสดุ',    icon: 'box'     },
-  { id: 'po',        label: 'OD',       icon: 'truck'   },
-  { id: 'smcguide',  label: 'SMC',      icon: 'receipt' },
-  { id: '_more',     label: 'เพิ่มเติม', icon: 'menu'   },
+  { id: 'dashboard',   label: 'หน้าหลัก',   icon: 'dash'    },
+  { id: 'items',       label: 'พัสดุหลัก',  icon: 'box'     },
+  { id: 'consumables', label: 'สิ้นเปลือง', icon: 'pkg'     },
+  { id: 'equipment',   label: 'ครุภัณฑ์',   icon: 'gear'    },
+  { id: 'stockout',    label: 'เบิกใช้',     icon: 'out'     },
+  { id: 'remaining',   label: 'คงเหลือ',     icon: 'alert'   },
+  { id: 'po',          label: 'OD',          icon: 'truck'   },
+  { id: 'smcguide',    label: 'SMC',         icon: 'receipt' },
+  { id: 'guide',       label: 'คู่มือ',      icon: 'book'    },
 ];
 
-function BottomNav({ active, onNav, onMenu }) {
+function BottomNav({ active, onNav }) {
   return (
     <nav className="bottom-nav" aria-label="เมนูหลัก">
       {BOTTOM_NAV.map(n => (
         <button
           key={n.id}
           className={cx('bnav-item', active === n.id && 'is-active')}
-          onClick={() => n.id === '_more' ? onMenu() : onNav(n.id)}
+          onClick={() => onNav(n.id)}
           aria-label={n.label}
         >
           <Icon k={n.icon} size={22}/>

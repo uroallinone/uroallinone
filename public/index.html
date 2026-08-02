@@ -348,7 +348,7 @@ body {
 .app { display: flex; min-height: 100vh; }
 .main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .content { flex: 1; min-width: 0; padding: 24px; }
-@media (max-width: 720px) { .content { padding: 16px 14px 80px; } }
+@media (max-width: 720px) { .content { padding: 0 0 80px; } }
 
 .scrim {
   position: fixed; inset: 0; background: rgba(15,23,42,.5);
@@ -521,34 +521,136 @@ body {
 }
 
 /* ==================================================================
-   Bottom nav — mobile only (≤720px)
+   Bottom nav — mobile only (≤720px) — scrollable, all menus
 ================================================================== */
 .bottom-nav {
   display: none;
   position: fixed; bottom: 0; left: 0; right: 0;
-  height: 62px;
+  height: 66px;
   background: var(--surface);
   border-top: 1.5px solid var(--bd);
   z-index: 80;
   padding-bottom: env(safe-area-inset-bottom, 0);
   box-shadow: 0 -4px 20px rgba(15,23,42,.1);
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
 }
-@media (max-width: 720px) { .bottom-nav { display: flex; } }
+.bottom-nav::-webkit-scrollbar { display: none; }
+@media (max-width: 720px) { .bottom-nav { display: flex; align-items: stretch; } }
 
 .bnav-item {
-  flex: 1;
+  flex: 0 0 auto;
+  min-width: 64px;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 3px;
+  gap: 4px;
   background: transparent; border: 0;
   color: var(--ink-3);
   font: inherit; cursor: pointer;
   transition: color .12s, background .1s;
-  padding: 0 0 2px;
+  padding: 4px 6px 6px;
 }
 .bnav-item:active { background: var(--bg); }
 .bnav-item.is-active { color: var(--accent); }
 .bnav-item.is-active .bnav-label { font-weight: 700; }
-.bnav-label { font-size: 10px; font-weight: 500; letter-spacing: .01em; }
+.bnav-label { font-size: 10px; font-weight: 500; letter-spacing: .01em; white-space: nowrap; }
+
+/* show/hide helpers */
+.mobile-only { display: none; }
+.desktop-only { display: block; }
+@media (max-width: 720px) {
+  .mobile-only { display: block; }
+  .desktop-only { display: none; }
+}
+
+/* ==================================================================
+   Mobile Home Dashboard
+================================================================== */
+.mh-wrap {
+  padding: 0 0 80px;
+  min-height: 100vh;
+  background: var(--bg);
+}
+.mh-hero {
+  background: linear-gradient(135deg, #0a2847 0%, #0f3d6e 100%);
+  color: #fff;
+  padding: 20px 18px 18px;
+}
+.mh-date { font-size: 13px; opacity: .75; margin-bottom: 4px; }
+.mh-title { font-size: 20px; font-weight: 700; letter-spacing: -.3px; }
+
+.mh-stats {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 0; border-bottom: 1px solid var(--bd);
+  background: var(--surface);
+}
+.mh-stat {
+  padding: 14px 6px 12px;
+  text-align: center;
+  border-right: 1px solid var(--bd);
+}
+.mh-stat:last-child { border-right: 0; }
+.mh-stat-n {
+  font-size: 26px; font-weight: 800; color: var(--ink); line-height: 1;
+}
+.mh-stat--warn .mh-stat-n { color: var(--bad); }
+.mh-stat--amber .mh-stat-n { color: #c2410c; }
+.mh-stat-l { font-size: 10px; color: var(--ink-3); margin-top: 3px; font-weight: 500; }
+
+.mh-section {
+  background: var(--surface);
+  margin-top: 10px;
+  border-radius: 0;
+}
+.mh-sec-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 16px 8px;
+  border-bottom: 1px solid var(--bd);
+}
+.mh-sec-title { font-size: 15px; font-weight: 700; color: var(--ink); }
+.mh-sec-link {
+  font-size: 13px; color: var(--accent); background: none; border: none;
+  cursor: pointer; font-weight: 600; padding: 2px 0;
+}
+.mh-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--bd);
+  gap: 10px;
+  cursor: pointer;
+}
+.mh-row:last-child { border-bottom: 0; }
+.mh-row-name { font-size: 15px; font-weight: 600; color: var(--ink); flex: 1; min-width: 0; }
+.mh-row-info { flex: 1; min-width: 0; }
+.mh-row-meta { font-size: 12px; color: var(--ink-3); margin-top: 2px; }
+.mh-row-r { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.mh-qty { font-size: 15px; font-weight: 700; color: var(--ink); white-space: nowrap; }
+.mh-unit { font-size: 12px; font-weight: 400; color: var(--ink-3); }
+.mh-badge {
+  font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 20px;
+  white-space: nowrap; flex-shrink: 0;
+}
+.mh-qty-out {
+  font-size: 16px; font-weight: 700; color: var(--bad); white-space: nowrap; flex-shrink: 0;
+}
+.mh-empty { padding: 20px 16px; font-size: 14px; color: var(--ink-3); }
+
+.mh-menu-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+}
+.mh-menu-card {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 8px; padding: 18px 8px;
+  background: none; border: 0; border-right: 1px solid var(--bd); border-bottom: 1px solid var(--bd);
+  cursor: pointer; color: var(--ink); font: inherit;
+  transition: background .12s;
+}
+.mh-menu-card:nth-child(4n) { border-right: 0; }
+.mh-menu-card:active { background: var(--bg); }
+.mh-menu-icon { color: var(--accent); }
+.mh-menu-label { font-size: 11px; font-weight: 600; color: var(--ink-2); text-align: center; line-height: 1.2; }
 
 /* ==================================================================
    Buttons / chips / icons
