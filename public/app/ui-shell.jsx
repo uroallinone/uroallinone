@@ -419,125 +419,76 @@ function CloudSection({ cloud, onConnect, onDisconnect }) {
 /* ---------- Settings / Data modal ---------- */
 /* ---------- Signup Requests (admin panel) ---------- */
 function SignupRequestsSection({ user }) {
-  const [reqs, setReqs] = useS(null);
-  const [loading, setLoading] = useS(true);
-  const [approvedPwd, setApprovedPwd] = useS(null); // { name, password }
-
-  useE(() => {
-    UroAuth.getSignups()
-      .then(d => { setReqs(d); setLoading(false); })
-      .catch(() => { setReqs([]); setLoading(false); });
-  }, []);
-
-  async function decide(id, name, status, role) {
-    try {
-      const body = await UroAuth.approveSignup(id, status, role || 'viewer');
-      if (status === 'approved' && body.password) {
-        setApprovedPwd({ name, password: body.password });
-      }
-    } catch (e) { alert(e.message); }
-    // Refresh list
-    UroAuth.getSignups().then(d => setReqs(d)).catch(() => {});
-  }
-
-  const pending  = (reqs||[]).filter(r=>r.status==='pending');
-  const approved = (reqs||[]).filter(r=>r.status==='approved');
-  const rejected = (reqs||[]).filter(r=>r.status==='rejected');
-
-  const rowStyle = { display:'flex', alignItems:'flex-start', gap:'10px', padding:'10px 0', borderBottom:'1px solid var(--bd)', flexWrap:'wrap' };
-  const chip = (color, bg, label) => (
-    <span style={{ fontSize:'11px', fontWeight:600, padding:'2px 8px', borderRadius:'6px', background:bg, color:color, flexShrink:0 }}>{label}</span>
-  );
+  const [name, setName] = useS('');
+  const [uname, setUname] = useS('');
+  const [pwd, setPwd] = useS('');
+  const [role, setRole] = useS('viewer');
+  const [copied, setCopied] = useS(false);
 
   if (user?.role !== 'admin') return null;
 
+  function genPwd() {
+    const c = 'abcdefghjkmnpqrstuvwxyz23456789';
+    return Array.from({ length: 8 }, () => c[Math.floor(Math.random() * c.length)]).join('');
+  }
+
+  const line = name.trim() && uname.trim() && pwd.trim()
+    ? `  { username: '${uname.trim()}', password: '${pwd.trim()}', name: '${name.trim()}', role: '${role}' },`
+    : '';
+
+  function copyLine() {
+    if (!line) return;
+    navigator.clipboard.writeText(line).catch(() => {});
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
   return (
     <div className="set-group">
-      <div className="set-group-t" style={{display:'flex',alignItems:'center',gap:'8px'}}>
-        <Icon k="user" size={16}/> คำขอสมัครใช้งาน
-        {pending.length > 0 && (
-          <span style={{ background:'#DC2626', color:'#fff', fontSize:'11px', fontWeight:700, padding:'1px 7px', borderRadius:'10px' }}>{pending.length}</span>
-        )}
+      <div className="set-group-t"><Icon k="user" size={16}/> เพิ่มผู้ใช้งานใหม่</div>
+      <p className="set-note">กรอกข้อมูลด้านล่าง → คัดลอก → วางใน <code>config.js</code> แล้ว push ขึ้น Vercel</p>
+
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px', marginTop:'10px' }}>
+        <div className="lbl" style={{margin:0}}>
+          ชื่อ-นามสกุล
+          <div className="input-wrap" style={{marginTop:'4px'}}>
+            <input value={name} onChange={e=>setName(e.target.value)} placeholder="พว. สมชาย ใจดี" style={{fontSize:'13px'}}/>
+          </div>
+        </div>
+        <div className="lbl" style={{margin:0}}>
+          username (ใช้ login)
+          <div className="input-wrap" style={{marginTop:'4px'}}>
+            <input value={uname} onChange={e=>setUname(e.target.value)} placeholder="somchai" style={{fontSize:'13px'}}/>
+          </div>
+        </div>
       </div>
 
-      {approvedPwd && (
-        <div style={{ background:'#f0fdf4', border:'1px solid #bbf7d0', borderRadius:'10px', padding:'14px', marginBottom:'12px' }}>
-          <div style={{ fontWeight:700, color:'#166534', marginBottom:'6px' }}>✅ อนุมัติ {approvedPwd.name} แล้ว</div>
-          <div style={{ fontSize:'13px', color:'#15803d', marginBottom:'8px' }}>รหัสผ่าน (แจ้งให้ผู้ใช้ทราบ):</div>
-          <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
-            <code style={{ fontSize:'20px', fontWeight:800, letterSpacing:'2px', background:'#dcfce7', padding:'6px 14px', borderRadius:'8px', color:'#14532d' }}>{approvedPwd.password}</code>
-            <button className="btn" style={{fontSize:'12px',padding:'5px 10px'}}
-              onClick={()=>{ navigator.clipboard.writeText(approvedPwd.password).catch(()=>{}); }}>คัดลอก</button>
+      <div style={{ display:'grid', gridTemplateColumns:'1fr auto auto', gap:'10px', marginTop:'10px', alignItems:'end' }}>
+        <div className="lbl" style={{margin:0}}>
+          รหัสผ่าน
+          <div className="input-wrap" style={{marginTop:'4px'}}>
+            <input value={pwd} onChange={e=>setPwd(e.target.value)} placeholder="ตั้งเองหรือกด Gen" style={{fontSize:'13px'}}/>
           </div>
-          <button style={{ marginTop:'10px', fontSize:'12px', color:'#64748b', background:'none', border:'none', cursor:'pointer', padding:0 }}
-            onClick={()=>setApprovedPwd(null)}>ปิด</button>
         </div>
-      )}
+        <button className="btn" style={{fontSize:'12px',padding:'7px 10px',whiteSpace:'nowrap'}} onClick={()=>setPwd(genPwd())}>Gen รหัส</button>
+        <select value={role} onChange={e=>setRole(e.target.value)}
+          style={{ fontSize:'12px', padding:'7px 8px', borderRadius:'8px', border:'1px solid var(--bd)', background:'var(--surface)', color:'var(--ink)', height:'36px' }}>
+          <option value="viewer">viewer</option>
+          <option value="editor">editor</option>
+          <option value="admin">admin</option>
+        </select>
+      </div>
 
-      {loading ? (
-        <p className="set-note">กำลังโหลด…</p>
-      ) : reqs && reqs.length === 0 ? (
-        <p className="set-note">ยังไม่มีคำขอสมัครใช้งาน</p>
-      ) : (
-        <>
-          {pending.length > 0 && (
-            <>
-              <div style={{ fontSize:'12px', fontWeight:700, color:'var(--ink-2)', textTransform:'uppercase', letterSpacing:'.05em', marginBottom:'4px', marginTop:'4px' }}>รอการอนุมัติ</div>
-              {pending.map(r => (
-                <div key={r.id} style={rowStyle}>
-                  <div style={{ flex:1, minWidth:0 }}>
-                    <div style={{ fontWeight:700, fontSize:'14px', color:'var(--ink)' }}>{r.name}</div>
-                    <div style={{ fontSize:'12px', color:'var(--ink-3)', marginTop:'2px' }}>{r.email}{r.department ? ` · ${r.department}` : ''}</div>
-                    <div style={{ fontSize:'11px', color:'var(--ink-3)', marginTop:'2px' }}>{new Date(r.created_at).toLocaleString('th-TH')}</div>
-                  </div>
-                  <div style={{ display:'flex', gap:'6px', flexShrink:0, flexWrap:'wrap' }}>
-                    <select defaultValue="viewer" id={`role-${r.id}`} style={{ fontSize:'12px', padding:'4px 8px', borderRadius:'8px', border:'1px solid var(--bd)', background:'var(--surface)', color:'var(--ink)' }}>
-                      <option value="viewer">viewer</option>
-                      <option value="editor">editor</option>
-                      <option value="admin">admin</option>
-                    </select>
-                    <button className="btn btn-primary" style={{ fontSize:'12px', padding:'5px 12px' }}
-                      onClick={()=>{ const sel=document.getElementById(`role-${r.id}`); decide(r.id, r.name, 'approved', sel?.value||'viewer'); }}>
-                      อนุมัติ
-                    </button>
-                    <button className="btn btn-danger" style={{ fontSize:'12px', padding:'5px 12px' }}
-                      onClick={()=>decide(r.id, r.name, 'rejected')}>
-                      ปฏิเสธ
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </>
-          )}
-          {approved.length > 0 && (
-            <>
-              <div style={{ fontSize:'12px', fontWeight:700, color:'var(--ink-2)', textTransform:'uppercase', letterSpacing:'.05em', marginBottom:'4px', marginTop:'12px' }}>อนุมัติแล้ว</div>
-              {approved.map(r => (
-                <div key={r.id} style={{...rowStyle, opacity:.7}}>
-                  <div style={{ flex:1 }}>
-                    <div style={{ fontWeight:600, fontSize:'13px', color:'var(--ink)' }}>{r.name}</div>
-                    <div style={{ fontSize:'12px', color:'var(--ink-3)' }}>{r.email} · {r.role}</div>
-                  </div>
-                  {chip('#166534','#dcfce7','อนุมัติแล้ว')}
-                </div>
-              ))}
-            </>
-          )}
-          {rejected.length > 0 && (
-            <>
-              <div style={{ fontSize:'12px', fontWeight:700, color:'var(--ink-2)', textTransform:'uppercase', letterSpacing:'.05em', marginBottom:'4px', marginTop:'12px' }}>ปฏิเสธ</div>
-              {rejected.map(r => (
-                <div key={r.id} style={{...rowStyle, opacity:.6}}>
-                  <div style={{ flex:1 }}>
-                    <div style={{ fontWeight:600, fontSize:'13px', color:'var(--ink)' }}>{r.name}</div>
-                    <div style={{ fontSize:'12px', color:'var(--ink-3)' }}>{r.email}</div>
-                  </div>
-                  {chip('#991b1b','#fee2e2','ปฏิเสธ')}
-                </div>
-              ))}
-            </>
-          )}
-        </>
+      {line && (
+        <div style={{ marginTop:'12px', background:'var(--surface-2,#f8fafc)', border:'1px solid var(--bd)', borderRadius:'10px', padding:'12px' }}>
+          <div style={{ fontSize:'11px', color:'var(--ink-3)', marginBottom:'6px', fontWeight:600, textTransform:'uppercase', letterSpacing:'.04em' }}>
+            คัดลอกบรรทัดนี้ไปวางใน config.js (ใน URO_USERS)
+          </div>
+          <code style={{ fontSize:'12px', color:'var(--ink)', wordBreak:'break-all', display:'block', lineHeight:1.6 }}>{line}</code>
+          <button className="btn btn-primary" style={{ marginTop:'10px', fontSize:'12px', padding:'6px 14px' }} onClick={copyLine}>
+            {copied ? '✅ คัดลอกแล้ว' : 'คัดลอก'}
+          </button>
+        </div>
       )}
     </div>
   );

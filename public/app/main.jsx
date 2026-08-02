@@ -501,18 +501,10 @@ function LoginScreen({ onLogin, loading, error }) {
     onLogin(uname.trim(), pass);
   }
 
-  async function submitReg(e) {
+  function submitReg(e) {
     e.preventDefault();
     if (!regName.trim() || !regEmail.trim()) return;
-    setRegLoading(true); setRegError('');
-    try {
-      await UroAuth.submitSignup(regName.trim(), regEmail.trim(), regDept.trim());
-      setRegDone(true);
-    } catch (err) {
-      setRegError(err.message || 'ส่งคำขอไม่สำเร็จ');
-    } finally {
-      setRegLoading(false);
-    }
+    setRegDone(true);
   }
 
   return (
@@ -607,21 +599,48 @@ function LoginScreen({ onLogin, loading, error }) {
             </div>
 
             {regDone ? (
-              <div style={{ padding:'32px 28px', textAlign:'center' }}>
-                <div style={{ fontSize:'40px', marginBottom:'12px' }}>✅</div>
-                <div style={{ fontSize:'17px', fontWeight:700, color:'#0F172A', marginBottom:'8px' }}>ส่งคำขอเรียบร้อยแล้ว</div>
-                <div style={{ fontSize:'14px', color:'#64748B', lineHeight:1.6 }}>
-                  รอ Admin อนุมัติ จากนั้นจะได้รับรหัสผ่านเพื่อเข้าใช้งาน
+              <div style={{ padding:'24px 28px 28px' }}>
+                <div style={{ background:'#f0fdf4', border:'1px solid #bbf7d0', borderRadius:'14px', padding:'18px', marginBottom:'18px' }}>
+                  <div style={{ fontSize:'13px', color:'#166534', fontWeight:700, marginBottom:'10px' }}>
+                    ✅ กรุณาส่งข้อมูลนี้ให้ Admin ทาง Line หรือ Email
+                  </div>
+                  <div style={{ fontSize:'13px', color:'#14532d', lineHeight:1.8, fontFamily:'monospace', background:'#dcfce7', borderRadius:'8px', padding:'10px 12px' }}>
+                    <div>ชื่อ: {regName.trim()}</div>
+                    <div>Email: {regEmail.trim()}</div>
+                    {regDept.trim() && <div>แผนก: {regDept.trim()}</div>}
+                  </div>
+                  <div style={{ display:'flex', gap:'8px', marginTop:'12px', flexWrap:'wrap' }}>
+                    <button type="button"
+                      style={{ flex:1, minWidth:'100px', padding:'9px 12px', borderRadius:'10px', border:'1px solid #86efac', background:'#fff', color:'#166534', fontSize:'13px', fontWeight:600, cursor:'pointer' }}
+                      onClick={()=>{
+                        const txt = `ขอสมัครใช้งาน Uro All Around\nชื่อ: ${regName.trim()}\nEmail: ${regEmail.trim()}${regDept.trim() ? '\nแผนก: '+regDept.trim() : ''}`;
+                        navigator.clipboard.writeText(txt).catch(()=>{});
+                      }}>
+                      คัดลอกข้อความ
+                    </button>
+                    <button type="button"
+                      style={{ flex:1, minWidth:'100px', padding:'9px 12px', borderRadius:'10px', border:'1px solid #86efac', background:'#fff', color:'#166534', fontSize:'13px', fontWeight:600, cursor:'pointer' }}
+                      onClick={()=>{
+                        const sub = encodeURIComponent('ขอสมัครใช้งาน Uro All Around');
+                        const body = encodeURIComponent(`ชื่อ: ${regName.trim()}\nEmail: ${regEmail.trim()}${regDept.trim() ? '\nแผนก: '+regDept.trim() : ''}`);
+                        window.open(`mailto:uroipissor@gmail.com?subject=${sub}&body=${body}`);
+                      }}>
+                      ส่ง Email
+                    </button>
+                  </div>
                 </div>
-                <button type="button" onClick={()=>{ setShowReg(false); setRegDone(false); }}
-                  style={{ marginTop:'20px', padding:'10px 28px', borderRadius:'12px', border:'none', background:'#0F3D6E', color:'#fff', fontSize:'14px', fontWeight:600, cursor:'pointer' }}>
+                <div style={{ fontSize:'12px', color:'#94a3b8', textAlign:'center', lineHeight:1.6, marginBottom:'16px' }}>
+                  Admin จะเพิ่มบัญชีผู้ใช้และแจ้ง username / รหัสผ่านให้ทาง Line
+                </div>
+                <button type="button" onClick={()=>{ setShowReg(false); setRegDone(false); setRegName(''); setRegEmail(''); setRegDept(''); }}
+                  style={{ width:'100%', padding:'11px', borderRadius:'12px', border:'none', background:'#0F3D6E', color:'#fff', fontSize:'14px', fontWeight:600, cursor:'pointer' }}>
                   ปิด
                 </button>
               </div>
             ) : (
               <form onSubmit={submitReg} style={{ padding:'20px 28px 28px' }}>
                 <p style={{ fontSize:'13px', color:'#64748B', marginBottom:'20px', lineHeight:1.6 }}>
-                  กรอกข้อมูลด้านล่าง Admin จะตรวจสอบและแจ้งรหัสผ่านให้ภายหลัง
+                  กรอกข้อมูลด้านล่าง Admin จะเพิ่มบัญชีและแจ้ง username / รหัสผ่านให้ทาง Line
                 </p>
                 <div className="lbl" style={{ marginBottom:'14px' }}>
                   ชื่อ-นามสกุล *
@@ -631,10 +650,10 @@ function LoginScreen({ onLogin, loading, error }) {
                   </div>
                 </div>
                 <div className="lbl" style={{ marginBottom:'14px' }}>
-                  Email *
+                  Email
                   <div className="input-wrap">
                     <Icon k="phone" size={15}/>
-                    <input type="email" value={regEmail} onChange={e=>setRegEmail(e.target.value)} placeholder="email@example.com" required/>
+                    <input value={regEmail} onChange={e=>setRegEmail(e.target.value)} placeholder="email@example.com" required/>
                   </div>
                 </div>
                 <div className="lbl" style={{ marginBottom:'20px' }}>
@@ -644,14 +663,9 @@ function LoginScreen({ onLogin, loading, error }) {
                     <input value={regDept} onChange={e=>setRegDept(e.target.value)} placeholder="เช่น พยาบาลห้องผ่าตัด Uro"/>
                   </div>
                 </div>
-                {regError && (
-                  <div style={{ marginBottom:'14px', padding:'10px 14px', borderRadius:'10px', background:'#fef2f2', color:'#dc2626', fontSize:'13px', border:'1px solid #fecaca' }}>
-                    {regError}
-                  </div>
-                )}
-                <button type="submit" disabled={regLoading || !regName.trim() || !regEmail.trim()}
-                  style={{ width:'100%', padding:'12px', borderRadius:'12px', border:'none', background:'#0F3D6E', color:'#fff', fontSize:'15px', fontWeight:600, cursor:'pointer', opacity:(regLoading || !regName.trim() || !regEmail.trim()) ? 0.6 : 1 }}>
-                  {regLoading ? 'กำลังส่งคำขอ…' : 'ส่งคำขอสมัครใช้งาน'}
+                <button type="submit" disabled={!regName.trim() || !regEmail.trim()}
+                  style={{ width:'100%', padding:'12px', borderRadius:'12px', border:'none', background:'#0F3D6E', color:'#fff', fontSize:'15px', fontWeight:600, cursor:'pointer', opacity:(!regName.trim() || !regEmail.trim()) ? 0.6 : 1 }}>
+                  ถัดไป →
                 </button>
               </form>
             )}
