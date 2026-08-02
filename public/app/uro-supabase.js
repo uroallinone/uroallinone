@@ -70,18 +70,22 @@
     },
     getSignups: () => _getSignups(),
     async submitSignup(name, email, department) {
-      // Try local server first
+      // Try local Node.js server; skip if it returns non-JSON (Vercel static 404)
       try {
         const res = await fetch('/api/signup', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({ name, email, department }),
         });
-        const body = await res.json().catch(() => ({}));
-        if (res.ok) return body;
-        throw new Error(body.error || 'ส่งคำขอไม่สำเร็จ');
+        const isJson = (res.headers.get('content-type') || '').includes('application/json');
+        if (isJson) {
+          const body = await res.json().catch(() => ({}));
+          if (res.ok) return body;
+          throw new Error(body.error || 'ส่งคำขอไม่สำเร็จ');
+        }
+        // Non-JSON = Vercel/static host has no API route — fall through to Supabase
       } catch (e) {
-        if (e.message === 'ส่งคำขอไม่สำเร็จ' || e.message.includes('ต้องระบุ')) throw e;
+        if (e.name !== 'TypeError') throw e; // propagate real server errors; TypeError = network fail → Supabase
       }
       // Fallback: Supabase
       if (!client) throw new Error('ไม่สามารถส่งคำขอได้ (ไม่มีการเชื่อมต่อ)');
@@ -103,8 +107,11 @@
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({ status, role }),
         });
-        const body = await res.json().catch(() => ({}));
-        if (res.ok) return body;
+        if ((res.headers.get('content-type') || '').includes('application/json')) {
+          const body = await res.json().catch(() => ({}));
+          if (res.ok) return body;
+        }
+        // Non-JSON = no API route, fall through to Supabase
       } catch (_) {}
       // Fallback: Supabase
       if (!client) throw new Error('ไม่มีการเชื่อมต่อ');
