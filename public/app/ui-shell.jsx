@@ -152,6 +152,8 @@ function Topbar({ onMenu, query, setQuery, onAddIn, onAddOut, onReports, user, o
     <header className="topbar">
       <button className="tb-menu" onClick={onMenu} aria-label="เปิดเมนู"><Icon k="menu" size={22}/></button>
 
+      <div className="tb-title-mobile"><LogoMark size={28}/><span>Uro All Around</span></div>
+
       <div className="tb-search">
         <Icon k="search" size={18}/>
         <input value={query} onChange={e => setQuery(e.target.value)}
@@ -502,8 +504,35 @@ function SettingsModal({ user, items, txns, equipment, cloud, onCloudConnect, on
   );
 }
 
+/* ---------- Bottom nav bar (mobile ≤720px) ---------- */
+const BOTTOM_NAV = [
+  { id: 'dashboard', label: 'หน้าหลัก', icon: 'dash'    },
+  { id: 'items',     label: 'พัสดุ',    icon: 'box'     },
+  { id: 'po',        label: 'OD',       icon: 'truck'   },
+  { id: 'smcguide',  label: 'SMC',      icon: 'receipt' },
+  { id: '_more',     label: 'เพิ่มเติม', icon: 'menu'   },
+];
+
+function BottomNav({ active, onNav, onMenu }) {
+  return (
+    <nav className="bottom-nav" aria-label="เมนูหลัก">
+      {BOTTOM_NAV.map(n => (
+        <button
+          key={n.id}
+          className={cx('bnav-item', active === n.id && 'is-active')}
+          onClick={() => n.id === '_more' ? onMenu() : onNav(n.id)}
+          aria-label={n.label}
+        >
+          <Icon k={n.icon} size={22}/>
+          <span className="bnav-label">{n.label}</span>
+        </button>
+      ))}
+    </nav>
+  );
+}
+
 Object.assign(window, {
   cx, fmt, statusOf, STATUS_TEXT,
-  Icon, LogoMark, Sidebar, Topbar, StatCard, StatusPill, BurnChart, Donut, Toast,
+  Icon, LogoMark, Sidebar, Topbar, BottomNav, StatCard, StatusPill, BurnChart, Donut, Toast,
   NAV, LoginScreen, SettingsModal, CloudSection,
 });
