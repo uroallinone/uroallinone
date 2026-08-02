@@ -121,7 +121,15 @@ function MobileDashboard({ items, txns, onGo }) {
 
 /* ===== Dashboard ===== */
 function Dashboard({ items, txns, burn, month, year, cats, onGo, onStockIn, onStockOut }) {
+  const [isMobile, setIsMobile] = useS(() => window.matchMedia('(max-width:720px)').matches);
   const [range, setRange] = useS('day');  // day | month | year
+
+  useE(() => {
+    const mq = window.matchMedia('(max-width:720px)');
+    const fn = e => setIsMobile(e.matches);
+    mq.addEventListener('change', fn);
+    return () => mq.removeEventListener('change', fn);
+  }, []);
 
   const counts = useM(() => {
     let ok=0, warn=0, low=0, out=0, total=items.length;
@@ -158,10 +166,10 @@ function Dashboard({ items, txns, burn, month, year, cats, onGo, onStockIn, onSt
     return { label: '5 ปีย้อนหลัง', total, value };
   }, [range, burn, month, year, cats]);
 
+  if (isMobile) return <MobileDashboard items={items} txns={txns} onGo={onGo}/>;
+
   return (
-    <>
-    <div className="mobile-only"><MobileDashboard items={items} txns={txns} onGo={onGo}/></div>
-    <div className="desktop-only page">
+    <div className="page">
       <div className="page-head">
         <div>
           <div className="eyebrow">แดชบอร์ดสต๊อก</div>
@@ -296,7 +304,6 @@ function Dashboard({ items, txns, burn, month, year, cats, onGo, onStockIn, onSt
         </section>
       </div>
     </div>
-    </>
   );
 }
 
@@ -1178,58 +1185,45 @@ function EquipmentScreen({ equipment, canEdit, onAddEquipment, onEditEquipment, 
         <Chip active={filter==='ok'} onClick={()=>setFilter('ok')}>อยู่ในเกณฑ์ ({enriched.length-overdue})</Chip>
       </div>
 
-      <section className="card card-table">
-        <div className="thead thead-eq">
-          <div className="th">เลขครุภัณฑ์</div>
-          <div className="th">ชื่อครุภัณฑ์</div>
-          <div className="th">วันที่รับไว้</div>
-          <div className="th th-num">อายุการใช้งาน</div>
-          <div className="th">ที่ตั้ง · สภาพ</div>
-          <div className="th">สถานะ</div>
-        </div>
-        <div className="tbody">
-          {filtered.map(e => {
-            const alert = e.years >= 5;
-            const yp = Math.min(1, e.years/10);
-            return (
-              <div key={e.eq_no} className={cx('tr', 'tr-eq', alert && 'is-alert')}>
-                <div className="td"><span className="mono ipiss">{e.eq_no}</span></div>
-                <div className="td">
-                  <div className="td-name-main">{e.name}</div>
-                  <div className="muted sm">มูลค่า {fmt(e.cost)} บาท</div>
-                  {e.supplier && <div className="vendor-line" style={{ marginTop:'2px' }}><Icon k="building" size={11}/><span className="vendor-co" style={{ fontSize:'11.5px' }}>{e.supplier}</span></div>}
+      <div className="ic-grid">
+        {filtered.map(e => {
+          const alert = e.years >= 5;
+          const yp = Math.min(1, e.years / 10);
+          return (
+            <div key={e.eq_no} className={cx('eq-card', alert && 's-out')}>
+              <div className="eq-card-top">
+                <span className="mono" style={{ fontSize:'11px', color:'var(--ink-3)' }}>{e.eq_no}</span>
+                <span className={cx('pill', `pill-${e.badge.tone==='ok'?'ok':e.badge.tone==='warn'?'warn':'out'}`)}>
+                  <span className="pill-dot"/>{e.badge.text}
+                </span>
+              </div>
+              <div className="ic-name" style={{ marginTop:'6px', fontSize:'14px' }}>{e.name}</div>
+              {e.supplier && (
+                <div className="vendor-line" style={{ marginTop:'4px' }}>
+                  <Icon k="building" size={11}/><span className="vendor-co" style={{ fontSize:'11.5px' }}>{e.supplier}</span>
                 </div>
-                <div className="td">
-                  <div className="mono">{e.received}</div>
-                  <div className="muted sm">{e.note}</div>
+              )}
+              <div className="eq-card-age">
+                <div className="qty-num"><b className={alert?'bad':''}>{e.years.toFixed(1)}</b><span className="qty-unit"> ปี</span></div>
+                <div className="age-bar" style={{ flex:1 }}>
+                  <span style={{ width:`${yp*100}%`, background: alert?'var(--bad)':e.years>=3?'var(--warn)':'var(--ok)' }}/>
+                  <span className="age-mark" style={{ left:'50%' }}/>
                 </div>
-                <div className="td td-num">
-                  <div className="qty-num"><b className={alert?'bad':''}>{e.years.toFixed(1)}</b><span className="qty-unit"> ปี</span></div>
-                  <div className="age-bar">
-                    <span style={{ width:`${yp*100}%`, background: alert?'var(--bad)':e.years>=3?'var(--warn)':'var(--ok)' }}/>
-                    <span className="age-mark" style={{ left:'50%' }} title="ครบ 5 ปี"/>
-                  </div>
-                </div>
-                <div className="td">
-                  <div>{e.loc}</div>
-                  <div className="muted sm">{e.cond}</div>
-                </div>
-                <div className="td">
-                  <span className={cx('pill', `pill-${e.badge.tone==='ok'?'ok':e.badge.tone==='warn'?'warn':'out'}`)}>
-                    <span className="pill-dot"/>{e.badge.text}
-                  </span>
-                </div>
+              </div>
+              <div className="muted sm" style={{ marginTop:'6px' }}>{e.loc}{e.cond ? ` · ${e.cond}` : ''}</div>
+              <div className="eq-card-foot">
+                <div className="muted sm">มูลค่า {fmt(e.cost)} บาท · รับ {e.received}</div>
                 {canEdit && (
-                <div className="td td-act">
-                  <button className="btn btn-mini btn-ghost" title="แก้ไข" onClick={()=>setEditEq(e)}>✏️</button>
-                  <button className="btn btn-mini btn-danger" title="ลบ" onClick={()=>{ if(window.confirm(`ลบ "${e.name}" ออกจากทะเบียน?`)) onDeleteEquipment(e.eq_no); }}>🗑️</button>
-                </div>
+                  <div style={{ display:'flex', gap:'4px' }}>
+                    <button className="btn btn-mini btn-ghost" onClick={()=>setEditEq(e)}>✏️</button>
+                    <button className="btn btn-mini btn-danger" onClick={()=>{ if(window.confirm(`ลบ "${e.name}"?`)) onDeleteEquipment(e.eq_no); }}>🗑️</button>
+                  </div>
                 )}
               </div>
-            );
-          })}
-        </div>
-      </section>
+            </div>
+          );
+        })}
+      </div>
 
       {showAdd && <AddEquipmentModal vendors={vendors} onAddVendor={onAddVendor} onClose={()=>setShowAdd(false)} onSave={(d)=>{ onAddEquipment(d); setShowAdd(false); }}/>}
       {editEq && <EditEquipmentModal eq={editEq} vendors={vendors} onAddVendor={onAddVendor} onClose={()=>setEditEq(null)} onSave={(d)=>{ onEditEquipment(d); setEditEq(null); }}/>}
@@ -2010,86 +2004,64 @@ function RemainingScreen({ items, cats, onStockIn }) {
         <Chip active={tab==='expired'} onClick={()=>setTab('expired')}>หมดอายุแล้ว ({counts.expired})</Chip>
       </div>
 
-      <section className="card card-table">
-        <div className="card-head">
-          <div className="card-title">รายการพัสดุที่ต้องตรวจสอบ · เรียงตามความเร่งด่วน</div>
-          <div className="legend">
-            <span className="legend-item"><span className="dot" style={{ background:'var(--bad)' }}/>หมดอายุ / หมดสต๊อก</span>
-            <span className="legend-item"><span className="dot" style={{ background:'var(--warn)' }}/>ใกล้หมดอายุ ≤ 3 เดือน</span>
-            <span className="legend-item"><span className="dot" style={{ background:'var(--ok)' }}/>ปกติ</span>
-          </div>
+      {visible.length === 0 ? (
+        <div className="empty"><div className="empty-mark"><Icon k="check" size={28}/></div>
+          <div className="empty-t">ไม่มีรายการในหมวดนี้</div>
+          <div className="empty-s">ทุกอย่างอยู่ในเกณฑ์ปกติ — ลองเลือกแท็บอื่น</div>
         </div>
-        <div className="thead thead-rem2">
-          <div className="th">เลข IPISS / รหัส</div>
-          <div className="th">ชื่อพัสดุ</div>
-          <div className="th th-num">คงเหลือ / ขั้นต่ำ</div>
-          <div className="th">วันหมดอายุ (lot)</div>
-          <div className="th">สถานะ</div>
-          <div className="th">ดำเนินการ</div>
-        </div>
-        <div className="tbody">
+      ) : (
+        <div className="ic-grid">
           {visible.map(it => {
             const cat = cats.find(c=>c.id===it.cat);
             const expired = it.exp.tone === 'expired';
             const expSoon = it.exp.tone === 'soon';
             const stockBad = it.stockS === 'out' || it.stockS === 'low';
+            const s = it.stockS;
+            const qtyColor = s==='out'?'var(--bad)':s==='low'?'#c2410c':s==='warn'?'var(--warn)':'var(--ok)';
+            const barBg = s==='out'?'var(--bad-soft)':s==='low'?'#fed7aa':s==='warn'?'var(--warn-soft)':'var(--ok-soft)';
             return (
-              <div key={it.code} className={cx('tr', 'tr-rem2', (expired || it.stockS==='out') && 'is-alert', expSoon && !expired && 'is-warn')}>
-                <div className="td">
-                  <span className="mono ipiss">{it.ipiss}</span>
-                  <span className="mono sm muted">{it.code} · {it.loc}</span>
+              <div key={it.code} className={cx('ic-card', `s-${s}`, expired && 's-out')}>
+                <div className="ic-bar" style={{ background: barBg }}/>
+                <div className="ic-head">
+                  <div className="cat-tag sm" style={{ background:`oklch(0.95 0.04 ${cat.hue})`, color:`oklch(0.35 0.12 ${cat.hue})` }}>{cat.en}</div>
+                  <StatusPill s={expired ? 'out' : s}/>
                 </div>
-                <div className="td">
-                  <div className="cat-tag sm" style={{ background: `oklch(0.95 0.04 ${cat.hue})`, color: `oklch(0.35 0.12 ${cat.hue})` }}>{cat.en}</div>
-                  <div className="td-name-main">{it.name}</div>
-                  <div className="muted sm">{it.supplier}</div>
+                <div className="ic-name">{it.name}</div>
+                <div className="ic-codes">
+                  <span className="ipiss" style={{ fontSize:'10px', padding:'1px 5px' }}>{it.ipiss}</span>
+                  <span className="mono" style={{ fontSize:'10px', color:'var(--ink-4)' }}>· {it.code}</span>
+                  {it.loc && <span style={{ fontSize:'10px', color:'var(--ink-4)' }}>· {it.loc}</span>}
                 </div>
-                <div className="td td-num">
-                  <div className="qty-num">
-                    <b className={it.stockS==='out'?'bad':''}>{fmt(it.qty)}</b>
-                    <span className="qty-unit"> / {it.min} {it.unit}</span>
+                <div className="ic-stats">
+                  <div style={{ textAlign:'right' }}>
+                    <div className="ic-stat-lbl">คงเหลือ</div>
+                    <span className={cx('ic-stat-big', s==='out'&&'bad')} style={{ color: qtyColor }}>{fmt(it.qty)}</span>
+                    <span className="ic-stat-unit"> / {it.min} {it.unit}</span>
                   </div>
-                  {stockBad && <div className="muted sm">ขาดอยู่ {it.gap} {it.unit}</div>}
                 </div>
-                <div className="td td-exp">
-                  <div className="exp-date">
-                    <Icon k="cal" size={13}/>
-                    <span className={expired?'bad':expSoon?'warn-t':''}>{it.exp.tone==='none' ? '—' : it.exp.label === 'หมดอายุแล้ว' ? '—' : (it.exp.days != null && it.exp.days > 90 ? it.exp.label : it.exp.label)}</span>
+                {stockBad && <div style={{ fontSize:'11px', color:'var(--bad)', fontWeight:600, marginTop:'2px' }}>ขาด {it.gap} {it.unit}</div>}
+                {it.exp.tone !== 'none' && (
+                  <div className={cx('exp-pill', `exp-${it.exp.tone}`)} style={{ marginTop:'6px' }}>
+                    <Icon k={expired ? 'alert' : 'clock'} size={11}/>
+                    <span>
+                      {expired
+                        ? `หมดอายุ ${Math.abs(it.exp.days)} วัน`
+                        : it.exp.tone === 'soon'
+                            ? (it.exp.days <= 30 ? `เหลือ ${it.exp.days} วัน` : `เหลือ ~${Math.round(it.exp.months*10)/10} เดือน`)
+                            : it.exp.tone === 'watch' ? `เหลือ ${Math.round(it.exp.months)} เดือน` : 'ปกติ'}
+                    </span>
                   </div>
-                  <div className="muted sm mono">OD {it.lot}{it.exp.tone!=='none' ? ` · ${it.exp.tone==='expired' ? 'หมดอายุ ' : 'ครบกำหนด '}${it.exp.tone!=='none'?(it.exp.days != null ? '' : ''):''}` : ''}</div>
-                  {it.exp.tone !== 'none' && (
-                    <div className={cx('exp-pill', `exp-${it.exp.tone}`)}>
-                      <Icon k={expired ? 'alert' : 'clock'} size={11}/>
-                      <span>
-                        {expired
-                          ? `หมดอายุ ${Math.abs(it.exp.days)} วัน`
-                          : it.exp.tone === 'soon'
-                              ? (it.exp.days <= 30 ? `เหลือ ${it.exp.days} วัน` : `เหลือ ~${Math.round(it.exp.months*10)/10} เดือน`)
-                              : it.exp.tone === 'watch' ? `เหลือ ${Math.round(it.exp.months)} เดือน` : 'ปกติ'}
-                      </span>
-                    </div>
-                  )}
-                </div>
-                <div className="td">
-                  {it.stockS !== 'ok' && <StatusPill s={it.stockS}/>}
-                  {it.stockS === 'ok' && it.exp.tone !== 'soon' && it.exp.tone !== 'expired' && <StatusPill s="ok"/>}
-                </div>
-                <div className="td">
+                )}
+                <div className="ic-actions">
                   <button className="btn btn-mini btn-primary" onClick={()=>onStockIn(it.code)}><Icon k="in" size={12}/><span>รับเข้า</span></button>
                   {expired && <button className="btn btn-mini btn-ghost"><Icon k="trash" size={12}/><span>จำหน่ายออก</span></button>}
-                  {!expired && stockBad && <button className="btn btn-mini btn-ghost"><Icon k="truck" size={12}/><span>สร้าง OD</span></button>}
+                  {!expired && stockBad && <button className="btn btn-mini btn-ghost"><Icon k="truck" size={12}/><span>OD</span></button>}
                 </div>
               </div>
             );
           })}
-          {visible.length === 0 && (
-            <div className="empty"><div className="empty-mark"><Icon k="check" size={28}/></div>
-              <div className="empty-t">ไม่มีรายการในหมวดนี้</div>
-              <div className="empty-s">ทุกอย่างอยู่ในเกณฑ์ปกติ — ลองเลือกแท็บอื่น</div>
-            </div>
-          )}
         </div>
-      </section>
+      )}
     </div>
   );
 }

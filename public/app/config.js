@@ -11,5 +11,8 @@ window.URO_USERS = [
   { username: 'Baheang',  password: '46590024166', name: 'Baheang', role: 'admin'  },
   { username: 'test',     password: '12345678',     name: 'test',    role: 'viewer' }, 
   { username: 'Baheang', password: '46590024', name: 'ปิยะพงษ์ ปงลังกา', role: 'viewer' },
+  git add public/app/config.js
+  git commit -m "Add new user"
+git push
 ];
   

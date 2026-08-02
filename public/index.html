@@ -1902,6 +1902,19 @@ body {
 .age-bar > span:first-child { display: block; height: 100%; border-radius: 100px; transition: width .3s; }
 .age-mark { position: absolute; top: -2px; bottom: -2px; width: 2px; background: var(--bad); border-radius: 2px; }
 
+.eq-card {
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 12px 14px; border-radius: 12px;
+  border: 1px solid var(--bd); background: var(--surface);
+  box-shadow: 0 1px 4px rgba(0,0,0,.04);
+  transition: box-shadow .15s;
+}
+.eq-card:hover { box-shadow: 0 3px 10px rgba(0,0,0,.08); }
+.eq-card.s-out { border-color: #FECACA; background: linear-gradient(160deg, #fff8f8, var(--surface) 50%); }
+.eq-card-top { display: flex; align-items: center; justify-content: space-between; }
+.eq-card-age { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
+.eq-card-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; gap: 6px; flex-wrap: wrap; }
+
 /* ==================================================================
    PO list
 ================================================================== */
