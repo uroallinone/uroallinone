@@ -506,10 +506,14 @@ body {
 /* Topbar cleanup on mobile */
 .tb-title-mobile { display: none; }
 @media (max-width: 720px) {
-  .topbar { padding: 0 10px; gap: 6px; }
+  body { font-size: 15px; }                     /* bump base size for readability */
+  .topbar { padding: 0 10px; gap: 6px; height: 56px; }
   .cloud-pill { display: none !important; }
   .tb-actions .btn:not(.btn-primary) { display: none; }
   .tb-icon[title="ตั้งค่า / ข้อมูล"] { display: none; }
+  /* bigger touch targets for topbar icons */
+  .tb-icon { padding: 10px; }
+  .btn-primary { padding: 10px 16px; font-size: 14px; }
 }
 @media (max-width: 480px) {
   .tb-search { display: none; }
@@ -1623,6 +1627,16 @@ body {
   .ic-grid  { grid-template-columns: 1fr; gap: 8px; padding: 10px; }
   .od-grid  { grid-template-columns: 1fr; gap: 8px; padding: 10px; }
   .ic-groups { padding: 10px; }
+
+  /* OD card text scale-up */
+  .od-no-t { font-size: 15px; }
+  .od-items { font-size: 15px; line-height: 1.7; }
+  .od-meta-r { font-size: 13px; }
+  .od-days-n b { font-size: 38px; }
+  .od-days-n span { font-size: 14px; }
+  .od-days-lbl { font-size: 13px; }
+  .od-confirm-lbl { font-size: 13px; }
+  .od-badge { width: 44px; height: 44px; border-radius: 12px; }
 }
 
 /* ================================================================
@@ -1726,14 +1740,38 @@ body {
 .smc-fee-val  { font-size: 13px; font-weight: 700; color: #cbd5e1; }
 .smc-fee-val.accent { color: #38bdf8; }
 
+/* ── Mobile SMC (≤600px) ── */
 @media (max-width: 600px) {
-  .smc-grid { grid-template-columns: 1fr; padding: 12px; gap: 10px; }
+  /* layout */
+  .smc-grid { grid-template-columns: 1fr; padding: 10px; gap: 10px; }
   .smc-topbar { padding: 12px 12px 0; }
-  .smc-filter-row { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 10px; gap: 8px; }
+  .smc-filter-row { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 12px; gap: 8px; }
   .smc-filter-row::-webkit-scrollbar { display: none; }
-  .smc-count { flex-shrink: 0; }
+  .smc-count { flex-shrink: 0; font-size: 14px; }
   .smc-sitthi-tabs { flex-shrink: 0; }
   .smc-time-pills { flex-shrink: 0; }
+
+  /* search */
+  .smc-search { font-size: 16px; padding: 13px 14px 13px 44px; } /* 16px prevents iOS auto-zoom */
+
+  /* sitthi tabs — bigger touch targets */
+  .smc-sitthi-tab { padding: 10px 20px; font-size: 15px; min-height: 44px; }
+
+  /* time pills — bigger */
+  .smc-pill { padding: 8px 14px; font-size: 13px; min-height: 38px; }
+
+  /* card text scale-up */
+  .smc-card { padding: 18px; }
+  .smc-name { font-size: 17px; }
+  .smc-total { font-size: 24px; }
+  .smc-badge { font-size: 13px; padding: 4px 10px; border-radius: 6px; }
+  .smc-total-lbl { font-size: 12px; }
+  .smc-div { margin: 12px 0; }
+
+  /* fee grid: 2 columns for readability */
+  .smc-fee-grid { grid-template-columns: repeat(2, 1fr); gap: 12px 10px; }
+  .smc-fee-lbl { font-size: 12px; }
+  .smc-fee-val { font-size: 17px; }
 }
 
 /* ==================================================================
