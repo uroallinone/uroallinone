@@ -2113,7 +2113,7 @@ function SMCEditModal({ item, override, onSave, onClose }) {
   });
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
+    <div className="modal-scrim" onClick={onClose}>
       <div className="smc-edit-modal" onClick={e => e.stopPropagation()}>
         <div className="smc-edit-head">
           <div>
