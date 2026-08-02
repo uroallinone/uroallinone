@@ -314,13 +314,15 @@ function ItemsScreen({ items, cats, query, canEdit, onCount, onStockIn, onStockO
   const [showAdd, setShowAdd] = useS(false);
   const [showImport, setShowImport] = useS(false);
   const [editItem, setEditItem] = useS(null);
+  const [localQ, setLocalQ] = useS('');
 
+  const effectiveQ = localQ || query;
   const typeItems = typeFilter ? items.filter(i => i.type === typeFilter) : items;
   const filtered = typeItems.filter(i => {
     if (cat !== 'all' && i.cat !== cat) return false;
     if (status !== 'all' && statusOf(i) !== status) return false;
-    if (query) {
-      const q = query.toLowerCase();
+    if (effectiveQ) {
+      const q = effectiveQ.toLowerCase();
       if (!(i.name.toLowerCase().includes(q) ||
             i.code.toLowerCase().includes(q) ||
             (i.ipiss||'').toLowerCase().includes(q) ||
@@ -344,6 +346,16 @@ function ItemsScreen({ items, cats, query, canEdit, onCount, onStockIn, onStockO
           {canEdit && <button className="btn btn-ghost" onClick={()=>setShowImport(true)}><Icon k="sheet" size={16}/><span>นำเข้าจาก Google Sheet</span></button>}
           {canEdit && <button className="btn btn-primary" onClick={()=>setShowAdd(true)}><Icon k="plus" size={16}/><span>เพิ่มรายการ</span></button>}
         </div>
+      </div>
+
+      <div className="ic-search-bar">
+        <Icon k="search" size={16}/>
+        <input
+          value={localQ}
+          onChange={e => setLocalQ(e.target.value)}
+          placeholder="ค้นหาชื่อ / รหัส / IPISS…"
+        />
+        {localQ && <button className="ic-search-clear" onClick={()=>setLocalQ('')}>✕</button>}
       </div>
 
       <div className="chips-row">
