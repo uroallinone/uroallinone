@@ -417,6 +417,136 @@ function CloudSection({ cloud, onConnect, onDisconnect }) {
 }
 
 /* ---------- Settings / Data modal ---------- */
+/* ---------- Signup Requests (admin panel) ---------- */
+function SignupRequestsSection({ user }) {
+  const [reqs, setReqs] = useS(null);
+  const [loading, setLoading] = useS(true);
+  const [approvedPwd, setApprovedPwd] = useS(null); // { name, password }
+
+  useE(() => {
+    fetch('/api/signup')
+      .then(r => r.json())
+      .then(d => { setReqs(d); setLoading(false); })
+      .catch(() => { setReqs([]); setLoading(false); });
+  }, []);
+
+  async function decide(id, name, status, role) {
+    const res = await fetch(`/api/signup/${id}`, {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ status, role: role || 'viewer' }),
+    });
+    const body = await res.json();
+    if (status === 'approved' && body.password) {
+      setApprovedPwd({ name, password: body.password });
+    }
+    // Refresh list
+    fetch('/api/signup').then(r=>r.json()).then(d=>setReqs(d));
+  }
+
+  const pending  = (reqs||[]).filter(r=>r.status==='pending');
+  const approved = (reqs||[]).filter(r=>r.status==='approved');
+  const rejected = (reqs||[]).filter(r=>r.status==='rejected');
+
+  const rowStyle = { display:'flex', alignItems:'flex-start', gap:'10px', padding:'10px 0', borderBottom:'1px solid var(--bd)', flexWrap:'wrap' };
+  const chip = (color, bg, label) => (
+    <span style={{ fontSize:'11px', fontWeight:600, padding:'2px 8px', borderRadius:'6px', background:bg, color:color, flexShrink:0 }}>{label}</span>
+  );
+
+  if (user?.role !== 'admin') return null;
+
+  return (
+    <div className="set-group">
+      <div className="set-group-t" style={{display:'flex',alignItems:'center',gap:'8px'}}>
+        <Icon k="user" size={16}/> คำขอสมัครใช้งาน
+        {pending.length > 0 && (
+          <span style={{ background:'#DC2626', color:'#fff', fontSize:'11px', fontWeight:700, padding:'1px 7px', borderRadius:'10px' }}>{pending.length}</span>
+        )}
+      </div>
+
+      {approvedPwd && (
+        <div style={{ background:'#f0fdf4', border:'1px solid #bbf7d0', borderRadius:'10px', padding:'14px', marginBottom:'12px' }}>
+          <div style={{ fontWeight:700, color:'#166534', marginBottom:'6px' }}>✅ อนุมัติ {approvedPwd.name} แล้ว</div>
+          <div style={{ fontSize:'13px', color:'#15803d', marginBottom:'8px' }}>รหัสผ่าน (แจ้งให้ผู้ใช้ทราบ):</div>
+          <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
+            <code style={{ fontSize:'20px', fontWeight:800, letterSpacing:'2px', background:'#dcfce7', padding:'6px 14px', borderRadius:'8px', color:'#14532d' }}>{approvedPwd.password}</code>
+            <button className="btn" style={{fontSize:'12px',padding:'5px 10px'}}
+              onClick={()=>{ navigator.clipboard.writeText(approvedPwd.password).catch(()=>{}); }}>คัดลอก</button>
+          </div>
+          <button style={{ marginTop:'10px', fontSize:'12px', color:'#64748b', background:'none', border:'none', cursor:'pointer', padding:0 }}
+            onClick={()=>setApprovedPwd(null)}>ปิด</button>
+        </div>
+      )}
+
+      {loading ? (
+        <p className="set-note">กำลังโหลด…</p>
+      ) : reqs && reqs.length === 0 ? (
+        <p className="set-note">ยังไม่มีคำขอสมัครใช้งาน</p>
+      ) : (
+        <>
+          {pending.length > 0 && (
+            <>
+              <div style={{ fontSize:'12px', fontWeight:700, color:'var(--ink-2)', textTransform:'uppercase', letterSpacing:'.05em', marginBottom:'4px', marginTop:'4px' }}>รอการอนุมัติ</div>
+              {pending.map(r => (
+                <div key={r.id} style={rowStyle}>
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <div style={{ fontWeight:700, fontSize:'14px', color:'var(--ink)' }}>{r.name}</div>
+                    <div style={{ fontSize:'12px', color:'var(--ink-3)', marginTop:'2px' }}>{r.email}{r.department ? ` · ${r.department}` : ''}</div>
+                    <div style={{ fontSize:'11px', color:'var(--ink-3)', marginTop:'2px' }}>{new Date(r.created_at).toLocaleString('th-TH')}</div>
+                  </div>
+                  <div style={{ display:'flex', gap:'6px', flexShrink:0, flexWrap:'wrap' }}>
+                    <select defaultValue="viewer" id={`role-${r.id}`} style={{ fontSize:'12px', padding:'4px 8px', borderRadius:'8px', border:'1px solid var(--bd)', background:'var(--surface)', color:'var(--ink)' }}>
+                      <option value="viewer">viewer</option>
+                      <option value="editor">editor</option>
+                      <option value="admin">admin</option>
+                    </select>
+                    <button className="btn btn-primary" style={{ fontSize:'12px', padding:'5px 12px' }}
+                      onClick={()=>{ const sel=document.getElementById(`role-${r.id}`); decide(r.id, r.name, 'approved', sel?.value||'viewer'); }}>
+                      อนุมัติ
+                    </button>
+                    <button className="btn btn-danger" style={{ fontSize:'12px', padding:'5px 12px' }}
+                      onClick={()=>decide(r.id, r.name, 'rejected')}>
+                      ปฏิเสธ
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </>
+          )}
+          {approved.length > 0 && (
+            <>
+              <div style={{ fontSize:'12px', fontWeight:700, color:'var(--ink-2)', textTransform:'uppercase', letterSpacing:'.05em', marginBottom:'4px', marginTop:'12px' }}>อนุมัติแล้ว</div>
+              {approved.map(r => (
+                <div key={r.id} style={{...rowStyle, opacity:.7}}>
+                  <div style={{ flex:1 }}>
+                    <div style={{ fontWeight:600, fontSize:'13px', color:'var(--ink)' }}>{r.name}</div>
+                    <div style={{ fontSize:'12px', color:'var(--ink-3)' }}>{r.email} · {r.role}</div>
+                  </div>
+                  {chip('#166534','#dcfce7','อนุมัติแล้ว')}
+                </div>
+              ))}
+            </>
+          )}
+          {rejected.length > 0 && (
+            <>
+              <div style={{ fontSize:'12px', fontWeight:700, color:'var(--ink-2)', textTransform:'uppercase', letterSpacing:'.05em', marginBottom:'4px', marginTop:'12px' }}>ปฏิเสธ</div>
+              {rejected.map(r => (
+                <div key={r.id} style={{...rowStyle, opacity:.6}}>
+                  <div style={{ flex:1 }}>
+                    <div style={{ fontWeight:600, fontSize:'13px', color:'var(--ink)' }}>{r.name}</div>
+                    <div style={{ fontSize:'12px', color:'var(--ink-3)' }}>{r.email}</div>
+                  </div>
+                  {chip('#991b1b','#fee2e2','ปฏิเสธ')}
+                </div>
+              ))}
+            </>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 function SettingsModal({ user, items, txns, equipment, cloud, onCloudConnect, onCloudDisconnect, onStartFresh, onRestoreSample, onImportData, onClose }) {
   const fileRef = useRef(null);
 
@@ -469,17 +599,7 @@ function SettingsModal({ user, items, txns, equipment, cloud, onCloudConnect, on
             <p className="set-note"><Icon k="alert" size={13}/> แนะนำให้สำรองข้อมูลเก็บไว้เป็นระยะ แม้จะต่อคลาวด์ไว้แล้ว</p>
           </div>
 
-          <div className="set-group">
-            <div className="set-group-t"><Icon k="user" size={16}/> จัดการสมาชิก (Admin invite-only)</div>
-            <p className="set-note"><Icon k="info" size={13}/> จัดการผู้ใช้ได้ที่ Supabase Dashboard → Authentication → Users</p>
-            <p className="set-note" style={{marginTop:'8px'}}><b>วิธี:</b></p>
-            <ol style={{marginLeft:'20px', fontSize:'13px', color:'var(--ink-3)', lineHeight:'1.6'}}>
-              <li>Supabase Dashboard → <b>Authentication</b> → <b>Users</b></li>
-              <li>คลิก <b>Invite user</b> → ใส่อีเมล → ส่งหรือสร้างรหัสผ่านเอง</li>
-              <li>ผู้ใช้จะได้รับอีเมล (หรือสามารถล็อกอินได้ทันที)</li>
-              <li>เพื่อลบ/รีเซ็ตรหัสผ่าน ให้ใช้ปุ่มเมนูในแต่ละแถว Users</li>
-            </ol>
-          </div>
+          <SignupRequestsSection user={user}/>
 
           <div className="set-group">
             <div className="set-group-t">สำรอง / กู้คืนข้อมูล</div>

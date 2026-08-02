@@ -26,7 +26,33 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS equipment (eq_no TEXT PRIMARY KEY, json TEXT NOT NULL);
   CREATE TABLE IF NOT EXISTS po        (od_no TEXT PRIMARY KEY, json TEXT NOT NULL);
   CREATE TABLE IF NOT EXISTS meta      (key   TEXT PRIMARY KEY, value TEXT);
+  CREATE TABLE IF NOT EXISTS signup_requests (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    email TEXT NOT NULL,
+    department TEXT DEFAULT '',
+    status TEXT DEFAULT 'pending',
+    password TEXT DEFAULT '',
+    role TEXT DEFAULT 'viewer',
+    created_at TEXT NOT NULL,
+    updated_at TEXT DEFAULT ''
+  );
 `);
+
+function genId() {
+  return 'req-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+}
+function genPassword() {
+  const c = 'abcdefghjkmnpqrstuvwxyz23456789';
+  return Array.from({ length: 8 }, () => c[Math.floor(Math.random() * c.length)]).join('');
+}
+const getSignups = db.prepare('SELECT * FROM signup_requests ORDER BY created_at DESC');
+const insertSignup = db.prepare(
+  'INSERT INTO signup_requests (id,name,email,department,status,password,role,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?)'
+);
+const updateSignup = db.prepare(
+  'UPDATE signup_requests SET status=?, password=?, role=?, updated_at=? WHERE id=?'
+);
 
 // Each collection keeps one row per record (full JSON), in client array order
 // (rowid order), so the whole-dataset round-trip is loss-free.
@@ -140,6 +166,53 @@ const server = http.createServer((req, res) => {
   }
 
   if (url === '/api/health') { sendJson(res, 200, { ok: true, db: DB_PATH }); return; }
+
+  /* ---- signup requests ---- */
+  if (url === '/api/signup') {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    if (req.method === 'OPTIONS') { res.writeHead(204); res.end(); return; }
+
+    if (req.method === 'GET') {
+      try {
+        const rows = getSignups.all();
+        sendJson(res, 200, rows);
+      } catch (e) { sendJson(res, 500, { error: e.message }); }
+      return;
+    }
+
+    if (req.method === 'POST') {
+      let body = '';
+      req.on('data', c => { body += c; });
+      req.on('end', () => {
+        try {
+          const { name, email, department } = JSON.parse(body || '{}');
+          if (!name || !email) { sendJson(res, 400, { error: 'ต้องระบุชื่อและอีเมล' }); return; }
+          const now = new Date().toISOString();
+          const id = genId();
+          insertSignup.run(id, name.trim(), email.trim().toLowerCase(), (department||'').trim(), 'pending', '', 'viewer', now, '');
+          sendJson(res, 201, { ok: true, id });
+        } catch (e) { sendJson(res, 400, { error: e.message }); }
+      });
+      return;
+    }
+  }
+
+  const signupMatch = url.match(/^\/api\/signup\/([^/?]+)$/);
+  if (signupMatch && req.method === 'PUT') {
+    let body = '';
+    req.on('data', c => { body += c; });
+    req.on('end', () => {
+      try {
+        const id = signupMatch[1];
+        const { status, role } = JSON.parse(body || '{}');
+        if (!['approved', 'rejected'].includes(status)) { sendJson(res, 400, { error: 'status ต้องเป็น approved หรือ rejected' }); return; }
+        const pwd = status === 'approved' ? genPassword() : '';
+        updateSignup.run(status, pwd, role || 'viewer', new Date().toISOString(), id);
+        sendJson(res, 200, { ok: true, password: pwd });
+      } catch (e) { sendJson(res, 400, { error: e.message }); }
+    });
+    return;
+  }
 
   serveStatic(req, res);
 });

@@ -487,11 +487,34 @@ function TweakControls({ tweaks, setTweak, onStartFresh, onRestoreSample }) {
 function LoginScreen({ onLogin, loading, error }) {
   const [uname, setUname] = useState_('');
   const [pass, setPass] = useState_('');
+  const [showReg, setShowReg] = useState_(false);
+  const [regName, setRegName] = useState_('');
+  const [regEmail, setRegEmail] = useState_('');
+  const [regDept, setRegDept] = useState_('');
+  const [regLoading, setRegLoading] = useState_(false);
+  const [regError, setRegError] = useState_('');
+  const [regDone, setRegDone] = useState_(false);
+
   function submit(e) {
     e.preventDefault();
     if (!uname.trim() || !pass) return;
     onLogin(uname.trim(), pass);
   }
+
+  async function submitReg(e) {
+    e.preventDefault();
+    if (!regName.trim() || !regEmail.trim()) return;
+    setRegLoading(true); setRegError('');
+    try {
+      await UroAuth.submitSignup(regName.trim(), regEmail.trim(), regDept.trim());
+      setRegDone(true);
+    } catch (err) {
+      setRegError(err.message || 'ส่งคำขอไม่สำเร็จ');
+    } finally {
+      setRegLoading(false);
+    }
+  }
+
   return (
     <div style={{
       minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center',
@@ -562,11 +585,79 @@ function LoginScreen({ onLogin, loading, error }) {
             {loading ? 'กำลังเข้าสู่ระบบ…' : 'เข้าสู่ระบบ'}
           </button>
 
-          <div style={{ marginTop:'20px', textAlign:'center', fontSize:'12px', color:'#94A3B8' }}>
-            ติดต่อผู้ดูแลระบบเพื่อขอรหัสผ่าน
+          <div style={{ marginTop:'16px', textAlign:'center' }}>
+            <button type="button" onClick={()=>setShowReg(true)}
+              style={{ background:'none', border:'none', color:'#0F3D6E', fontSize:'13px', cursor:'pointer', textDecoration:'underline', padding:'4px 8px' }}>
+              ยังไม่มีบัญชี? ขอสมัครใช้งาน
+            </button>
           </div>
         </form>
       </div>
+
+      {/* Sign-up request modal */}
+      {showReg && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.55)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:200, padding:'20px' }}
+          onClick={()=>{ if (!regLoading) { setShowReg(false); setRegDone(false); setRegError(''); } }}>
+          <div style={{ background:'#fff', borderRadius:'20px', width:'100%', maxWidth:'420px', boxShadow:'0 24px 80px rgba(0,0,0,.4)', overflow:'hidden' }}
+            onClick={e=>e.stopPropagation()}>
+            <div style={{ padding:'24px 28px 0', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+              <div style={{ fontSize:'18px', fontWeight:700, color:'#0F172A' }}>ขอสมัครใช้งาน</div>
+              <button type="button" onClick={()=>{ setShowReg(false); setRegDone(false); setRegError(''); }}
+                style={{ background:'none', border:'none', cursor:'pointer', color:'#64748B', padding:'4px', fontSize:'20px', lineHeight:1 }}>✕</button>
+            </div>
+
+            {regDone ? (
+              <div style={{ padding:'32px 28px', textAlign:'center' }}>
+                <div style={{ fontSize:'40px', marginBottom:'12px' }}>✅</div>
+                <div style={{ fontSize:'17px', fontWeight:700, color:'#0F172A', marginBottom:'8px' }}>ส่งคำขอเรียบร้อยแล้ว</div>
+                <div style={{ fontSize:'14px', color:'#64748B', lineHeight:1.6 }}>
+                  รอ Admin อนุมัติ จากนั้นจะได้รับรหัสผ่านเพื่อเข้าใช้งาน
+                </div>
+                <button type="button" onClick={()=>{ setShowReg(false); setRegDone(false); }}
+                  style={{ marginTop:'20px', padding:'10px 28px', borderRadius:'12px', border:'none', background:'#0F3D6E', color:'#fff', fontSize:'14px', fontWeight:600, cursor:'pointer' }}>
+                  ปิด
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={submitReg} style={{ padding:'20px 28px 28px' }}>
+                <p style={{ fontSize:'13px', color:'#64748B', marginBottom:'20px', lineHeight:1.6 }}>
+                  กรอกข้อมูลด้านล่าง Admin จะตรวจสอบและแจ้งรหัสผ่านให้ภายหลัง
+                </p>
+                <div className="lbl" style={{ marginBottom:'14px' }}>
+                  ชื่อ-นามสกุล *
+                  <div className="input-wrap">
+                    <Icon k="user" size={15}/>
+                    <input value={regName} onChange={e=>setRegName(e.target.value)} placeholder="เช่น พว. สมชาย ใจดี" required/>
+                  </div>
+                </div>
+                <div className="lbl" style={{ marginBottom:'14px' }}>
+                  Email *
+                  <div className="input-wrap">
+                    <Icon k="phone" size={15}/>
+                    <input type="email" value={regEmail} onChange={e=>setRegEmail(e.target.value)} placeholder="email@example.com" required/>
+                  </div>
+                </div>
+                <div className="lbl" style={{ marginBottom:'20px' }}>
+                  แผนก / ตำแหน่ง
+                  <div className="input-wrap">
+                    <Icon k="building" size={15}/>
+                    <input value={regDept} onChange={e=>setRegDept(e.target.value)} placeholder="เช่น พยาบาลห้องผ่าตัด Uro"/>
+                  </div>
+                </div>
+                {regError && (
+                  <div style={{ marginBottom:'14px', padding:'10px 14px', borderRadius:'10px', background:'#fef2f2', color:'#dc2626', fontSize:'13px', border:'1px solid #fecaca' }}>
+                    {regError}
+                  </div>
+                )}
+                <button type="submit" disabled={regLoading || !regName.trim() || !regEmail.trim()}
+                  style={{ width:'100%', padding:'12px', borderRadius:'12px', border:'none', background:'#0F3D6E', color:'#fff', fontSize:'15px', fontWeight:600, cursor:'pointer', opacity:(regLoading || !regName.trim() || !regEmail.trim()) ? 0.6 : 1 }}>
+                  {regLoading ? 'กำลังส่งคำขอ…' : 'ส่งคำขอสมัครใช้งาน'}
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

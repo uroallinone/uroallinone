@@ -39,18 +39,49 @@
       const found = users.find(u =>
         u.username.toLowerCase() === String(username).toLowerCase() && u.password === password
       );
-      if (!found) throw new Error('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
-      const profile = {
-        id: found.username,
-        name: found.name,
-        role: found.role,
-        initials: (found.name[0] || '?').toUpperCase(),
-      };
-      sessionStorage.setItem('uro_session', JSON.stringify(profile));
-      return profile;
+      if (found) {
+        const profile = {
+          id: found.username, name: found.name, role: found.role,
+          initials: (found.name[0] || '?').toUpperCase(),
+        };
+        sessionStorage.setItem('uro_session', JSON.stringify(profile));
+        return profile;
+      }
+      // Also check server-approved signup requests (login with email + generated password)
+      try {
+        const res = await fetch('/api/signup');
+        if (res.ok) {
+          const reqs = await res.json();
+          const approved = reqs.find(r =>
+            r.status === 'approved' &&
+            r.email.toLowerCase() === String(username).toLowerCase().trim() &&
+            r.password === password
+          );
+          if (approved) {
+            const profile = {
+              id: approved.id, name: approved.name, email: approved.email,
+              role: approved.role || 'viewer',
+              initials: (approved.name[0] || '?').toUpperCase(),
+            };
+            sessionStorage.setItem('uro_session', JSON.stringify(profile));
+            return profile;
+          }
+        }
+      } catch (_) { /* server may not be available — fall through */ }
+      throw new Error('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
     },
     async signOut() {
       sessionStorage.removeItem('uro_session');
+    },
+    async submitSignup(name, email, department) {
+      const res = await fetch('/api/signup', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ name, email, department }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || 'ส่งคำขอไม่สำเร็จ');
+      return body;
     },
   };
 
