@@ -1609,16 +1609,28 @@ body {
 .smc-search:focus { border-color: #38bdf8; }
 .smc-search::placeholder { color: #475569; }
 .smc-filter-row {
-  display: flex; align-items: center; gap: 8px; padding-bottom: 14px; flex-wrap: wrap;
+  display: flex; align-items: center; gap: 10px; padding-bottom: 14px; flex-wrap: wrap;
 }
-.smc-filter-lbl { font-size: 13px; color: #64748b; }
+/* สิทธิ์ tabs — prominent pill group */
+.smc-sitthi-tabs {
+  display: flex; border: 1.5px solid #2d3f55; border-radius: 10px; overflow: hidden;
+}
+.smc-sitthi-tab {
+  padding: 6px 18px; background: transparent; border: none; border-right: 1.5px solid #2d3f55;
+  color: #94a3b8; font-size: 13px; font-weight: 600; cursor: pointer; transition: all .15s;
+}
+.smc-sitthi-tab:last-child { border-right: none; }
+.smc-sitthi-tab:hover { color: #38bdf8; background: rgba(56,189,248,.06); }
+.smc-sitthi-tab.is-on { background: #0ea5e9; color: #fff; }
+/* time filter pills */
+.smc-time-pills { display: flex; align-items: center; gap: 6px; }
 .smc-pill {
-  padding: 4px 14px; border-radius: 20px; border: 1.5px solid #2d3f55;
-  background: transparent; color: #94a3b8; font-size: 13px; cursor: pointer;
+  padding: 4px 12px; border-radius: 20px; border: 1.5px solid #2d3f55;
+  background: transparent; color: #94a3b8; font-size: 12px; cursor: pointer;
   transition: all .15s;
 }
 .smc-pill:hover { border-color: #38bdf8; color: #38bdf8; }
-.smc-pill.is-on { background: #0ea5e9; border-color: #0ea5e9; color: #fff; font-weight: 600; }
+.smc-pill.is-on { background: #1e4060; border-color: #38bdf8; color: #7dd3fc; font-weight: 600; }
 .smc-count { margin-left: auto; font-size: 13px; color: #475569; }
 
 /* Grid */
