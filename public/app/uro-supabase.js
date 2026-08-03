@@ -149,7 +149,7 @@
   }
   function normalize(d) {
     d = d || {};
-    return { items: d.items || [], txns: d.txns || [], equipment: d.equipment || [], po: d.po || [], vendors: d.vendors || [] };
+    return { items: d.items || [], txns: d.txns || [], equipment: d.equipment || [], po: d.po || [], vendors: d.vendors || [], transplants: d.transplants || [] };
   }
   function isEmpty(d) {
     return !d.items.length && !d.txns.length && !d.equipment.length && !d.po.length;

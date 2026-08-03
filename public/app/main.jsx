@@ -112,6 +112,7 @@ function App() {
   const [txns, setTxns] = useState_(() => loadPersisted('txns', []));
   const [equipment, setEquipment] = useState_(() => loadPersisted('equipment', []));
   const [pos, setPos] = useState_(() => loadPersisted('po', []));
+  const [transplants, setTransplants] = useState_(() => loadPersisted('transplants', []));
   const [vendors, setVendors] = useState_(() => {
     const saved = loadPersisted('vendors', null);
     if (saved !== null) return saved;
@@ -138,6 +139,7 @@ function App() {
   useEffect_(() => { savePersisted('equipment', equipment); }, [equipment]);
   useEffect_(() => { savePersisted('po', pos); }, [pos]);
   useEffect_(() => { savePersisted('vendors', vendors); }, [vendors]);
+  useEffect_(() => { savePersisted('transplants', transplants); }, [transplants]);
 
   // Session check + auth state listener
   useEffect_(() => {
@@ -162,6 +164,7 @@ function App() {
       if (Array.isArray(d.equipment)) setEquipment(d.equipment);
       if (Array.isArray(d.po)) setPos(d.po);
       if (Array.isArray(d.vendors)) setVendors(d.vendors);
+      if (Array.isArray(d.transplants)) setTransplants(d.transplants);
     });
   }, []);
 
@@ -176,8 +179,8 @@ function App() {
   useEffect_(() => {
     if (!hasCloud || !UroCloud.isLive()) return;
     if (applyingRemote.current) { applyingRemote.current = false; return; }
-    UroCloud.push({ items, txns, equipment, po: pos, vendors, by: user?.name });
-  }, [items, txns, equipment, pos]);
+    UroCloud.push({ items, txns, equipment, po: pos, vendors, transplants, by: user?.name });
+  }, [items, txns, equipment, pos, transplants]);
 
   // Apply tokens to :root
   useEffect_(() => {
@@ -409,6 +412,18 @@ function App() {
         return <ReportsScreen items={items} txns={txns} cats={URO_CATEGORIES}/>;
       case 'smcguide':
         return <SMCGuideScreen user={user}/>;
+      case 'transplant':
+        return <TransplantScreen
+          cases={transplants}
+          canEdit={canEdit}
+          onSave={c => {
+            setTransplants(arr => {
+              const idx = arr.findIndex(x => x.id === c.id);
+              return idx >= 0 ? arr.map(x => x.id===c.id ? c : x) : [...arr, c];
+            });
+          }}
+          onDelete={id => setTransplants(arr => arr.filter(x => x.id !== id))}
+        />;
       case 'guide':
         return <GuideScreen/>;
       default: return null;

@@ -2314,6 +2314,360 @@ function SMCGuideScreen({ user }) {
   );
 }
 
+/* ===== Transplant Report ===== */
+function txpEmpty() {
+  return {
+    id: 'txp-' + Date.now() + '-' + Math.random().toString(36).slice(2,6),
+    date: new Date().toISOString().slice(0,10),
+    perfusionSolution: '',
+    kidneyLeft: true, kidneyRight: false,
+    perfusionStart: '', perfusionEnd: '',
+    kidneyOnPt: '',
+    transplantStart: '', transplantEnd: '',
+    clampTime: '', clampDate: new Date().toISOString().slice(0,10),
+    deClampTime: '', deClampDate: new Date().toISOString().slice(0,10),
+    surgeons: ['','','',''],
+    scrubNurses: ['','',''],
+    timeIn: '', timeOn: '', timeEnd: '', timeOut: '',
+    patientName: '', hn: '', note: '',
+  };
+}
+function txpParseMin(t) {
+  if (!t || !t.includes(':')) return null;
+  const [h,m] = t.split(':').map(Number);
+  return h*60+m;
+}
+function txpDurStr(start, end) {
+  const s = txpParseMin(start), e = txpParseMin(end);
+  if (s===null || e===null) return null;
+  let d = e - s; if (d < 0) d += 1440;
+  return `${Math.floor(d/60)} ชั่วโมง ${d%60} นาที`;
+}
+function txpTotalHM(d1, t1, d2, t2) {
+  if (!d1||!t1||!d2||!t2) return null;
+  try {
+    const dt1 = new Date(`${d1}T${t1}:00`), dt2 = new Date(`${d2}T${t2}:00`);
+    const mins = Math.round((dt2-dt1)/60000);
+    if (mins<0) return null;
+    return { h: Math.floor(mins/60), m: mins%60 };
+  } catch { return null; }
+}
+function txpFmtDate(iso) {
+  if (!iso) return '—';
+  const [y,mo,d] = iso.split('-');
+  return `${parseInt(d)}/${parseInt(mo)}/${parseInt(y)+543}`;
+}
+
+function TransplantScreen({ cases=[], canEdit, onSave, onDelete }) {
+  const [view, setView] = useS('list');
+  const [selected, setSelected] = useS(null);
+  const [form, setForm] = useS(null);
+
+  const setF = (k,v) => setForm(f=>({...f,[k]:v}));
+  const setSurgeon  = (i,v) => setForm(f=>{ const a=[...f.surgeons];  a[i]=v; return {...f,surgeons:a}; });
+  const setScrub    = (i,v) => setForm(f=>{ const a=[...f.scrubNurses];a[i]=v;return {...f,scrubNurses:a};});
+
+  const openNew  = ()        => { setForm(txpEmpty()); setView('form'); };
+  const openEdit = c         => { setForm({...c});     setView('form'); };
+  const openDetail = c       => { setSelected(c);      setView('detail'); };
+  const saveForm = ()        => { onSave(form); setView('list'); setForm(null); };
+
+  /* ── FORM VIEW ── */
+  if (view==='form' && form) {
+    const total = txpTotalHM(form.clampDate, form.clampTime, form.deClampDate, form.deClampTime);
+    const isEdit = cases.some(c=>c.id===form.id);
+    return (
+      <div className="page">
+        <div className="page-head">
+          <div>
+            <div className="eyebrow">Transplant Report</div>
+            <h1 className="page-title">{isEdit ? 'แก้ไข Case' : 'สร้าง Case ใหม่'}</h1>
+          </div>
+          <div className="page-head-actions">
+            <button className="btn btn-ghost" onClick={()=>setView(isEdit?'detail':'list')}>ยกเลิก</button>
+            <button className="btn btn-primary" onClick={saveForm}>บันทึก</button>
+          </div>
+        </div>
+
+        <div className="txp-form">
+          {/* ─ ข้อมูลพื้นฐาน ─ */}
+          <div className="card txp-section">
+            <div className="txp-sec-title">ข้อมูลผู้ป่วย</div>
+            <div className="txp-row3">
+              <label className="lbl">วันที่ผ่าตัด<input type="date" value={form.date} onChange={e=>setF('date',e.target.value)}/></label>
+              <label className="lbl">ชื่อผู้ป่วย<input value={form.patientName} onChange={e=>setF('patientName',e.target.value)} placeholder="น.ส.วรรณา ยะถา"/></label>
+              <label className="lbl">HN<input value={form.hn} onChange={e=>setF('hn',e.target.value)} placeholder="982730"/></label>
+            </div>
+            <div className="txp-row3" style={{marginTop:'12px'}}>
+              <label className="lbl">Perfusion Solution (ml.)<input type="number" value={form.perfusionSolution} onChange={e=>setF('perfusionSolution',e.target.value)} placeholder="4000"/></label>
+              <div className="lbl">Kidney
+                <div style={{display:'flex',gap:'20px',marginTop:'8px'}}>
+                  <label style={{display:'flex',gap:'6px',alignItems:'center',cursor:'pointer',fontWeight:600,fontSize:'13px'}}>
+                    <input type="checkbox" checked={!!form.kidneyLeft} onChange={e=>setF('kidneyLeft',e.target.checked)}/> Left
+                  </label>
+                  <label style={{display:'flex',gap:'6px',alignItems:'center',cursor:'pointer',fontWeight:600,fontSize:'13px'}}>
+                    <input type="checkbox" checked={!!form.kidneyRight} onChange={e=>setF('kidneyRight',e.target.checked)}/> Right
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ─ เวลาการผ่าตัด ─ */}
+          <div className="card txp-section">
+            <div className="txp-sec-title">เวลาการผ่าตัด</div>
+            <div className="txp-row3">
+              <label className="lbl">Perfusion Time (เริ่ม)<input type="time" value={form.perfusionStart} onChange={e=>setF('perfusionStart',e.target.value)}/></label>
+              <label className="lbl">Perfusion Time (สิ้นสุด)<input type="time" value={form.perfusionEnd} onChange={e=>setF('perfusionEnd',e.target.value)}/></label>
+              <label className="lbl">Time — Kidney on Pt.<input type="time" value={form.kidneyOnPt} onChange={e=>setF('kidneyOnPt',e.target.value)}/></label>
+            </div>
+            <div className="txp-row3" style={{marginTop:'12px'}}>
+              <label className="lbl">Time Transplant (เริ่ม)<input type="time" value={form.transplantStart} onChange={e=>setF('transplantStart',e.target.value)}/></label>
+              <label className="lbl">Time Transplant (สิ้นสุด)<input type="time" value={form.transplantEnd} onChange={e=>setF('transplantEnd',e.target.value)}/></label>
+            </div>
+            {txpDurStr(form.perfusionStart,form.perfusionEnd) && (
+              <div className="txp-calc-hint">Perfusion duration: {txpDurStr(form.perfusionStart,form.perfusionEnd)}</div>
+            )}
+            {txpDurStr(form.transplantStart,form.transplantEnd) && (
+              <div className="txp-calc-hint">Transplant duration: {txpDurStr(form.transplantStart,form.transplantEnd)}</div>
+            )}
+          </div>
+
+          {/* ─ Clamp / De-Clamp ─ */}
+          <div className="card txp-section">
+            <div className="txp-sec-title">Clamp / De-Clamp</div>
+            <div className="txp-row2">
+              <label className="lbl">Clamp Date<input type="date" value={form.clampDate} onChange={e=>setF('clampDate',e.target.value)}/></label>
+              <label className="lbl">Clamp Time<input type="time" value={form.clampTime} onChange={e=>setF('clampTime',e.target.value)}/></label>
+              <label className="lbl">De-Clamp Date<input type="date" value={form.deClampDate} onChange={e=>setF('deClampDate',e.target.value)}/></label>
+              <label className="lbl">De-Clamp Time<input type="time" value={form.deClampTime} onChange={e=>setF('deClampTime',e.target.value)}/></label>
+            </div>
+            {total && (
+              <div className="txp-total-preview">
+                <Icon k="clock" size={14}/> Total Time: <b>{total.h} ชั่วโมง {total.m} นาที</b>
+              </div>
+            )}
+          </div>
+
+          {/* ─ ทีมผ่าตัด ─ */}
+          <div className="card txp-section">
+            <div className="txp-sec-title">Surgeon</div>
+            <div className="txp-row2">
+              {form.surgeons.map((s,i)=>(
+                <label key={i} className="lbl">Surgeon {i+1}
+                  <input value={s} onChange={e=>setSurgeon(i,e.target.value)} placeholder="พ.เอกณัฏฐ์"/>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="card txp-section">
+            <div className="txp-sec-title">Scrub Nurse</div>
+            <div className="txp-row2">
+              {form.scrubNurses.map((s,i)=>(
+                <label key={i} className="lbl">Scrub Nurse {i+1}
+                  <input value={s} onChange={e=>setScrub(i,e.target.value)} placeholder="พว.กิ่งแก้ว นรรัตน์"/>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* ─ เวลาทำงาน ─ */}
+          <div className="card txp-section">
+            <div className="txp-sec-title">เวลาทำงาน</div>
+            <div className="txp-row2">
+              <label className="lbl">Time In<input type="time" value={form.timeIn} onChange={e=>setF('timeIn',e.target.value)}/></label>
+              <label className="lbl">Time On<input type="time" value={form.timeOn} onChange={e=>setF('timeOn',e.target.value)}/></label>
+              <label className="lbl">Time End<input type="time" value={form.timeEnd} onChange={e=>setF('timeEnd',e.target.value)}/></label>
+              <label className="lbl">Time Out<input type="time" value={form.timeOut} onChange={e=>setF('timeOut',e.target.value)}/></label>
+            </div>
+          </div>
+
+          {/* ─ หมายเหตุ ─ */}
+          <div className="card txp-section" style={{gridColumn:'1/-1'}}>
+            <div className="txp-sec-title">หมายเหตุ</div>
+            <textarea className="txp-note" value={form.note} onChange={e=>setF('note',e.target.value)} placeholder="หมายเหตุ…" rows={2}/>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /* ── DETAIL VIEW ── */
+  if (view==='detail' && selected) {
+    const s = selected;
+    const caseNo = cases.findIndex(c=>c.id===s.id)+1;
+    const total  = txpTotalHM(s.clampDate,s.clampTime,s.deClampDate,s.deClampTime);
+    const perfDur = txpDurStr(s.perfusionStart, s.perfusionEnd);
+    const txpDur  = txpDurStr(s.transplantStart, s.transplantEnd);
+    return (
+      <div className="page">
+        <div className="page-head">
+          <div>
+            <div className="eyebrow">Transplant Report</div>
+            <h1 className="page-title">Case #{caseNo} · {txpFmtDate(s.date)}</h1>
+          </div>
+          <div className="page-head-actions">
+            <button className="btn btn-ghost" onClick={()=>setView('list')}>← รายการ</button>
+            {canEdit && <button className="btn btn-primary" onClick={()=>openEdit(s)}><Icon k="edit" size={14}/><span>แก้ไข</span></button>}
+          </div>
+        </div>
+
+        {/* ── Sheet-style report ── */}
+        <div className="txp-sheet">
+
+          {/* TOP TABLE */}
+          <div className="txp-top-table">
+            {/* Header row */}
+            <div className="txp-top-hdr">
+              <div className="txp-th" style={{gridRow:'span 2'}}>Date</div>
+              <div className="txp-th" style={{gridRow:'span 2'}}>Perfusion<br/>Solution (ml.)</div>
+              <div className="txp-th" style={{gridColumn:'span 2'}}>Kidney</div>
+              <div className="txp-th" style={{gridColumn:'span 2'}}>Perfusion Time</div>
+              <div className="txp-th" style={{gridRow:'span 2'}}>Time<br/>Kidney on Pt.</div>
+              <div className="txp-th" style={{gridColumn:'span 2'}}>Time Transplant</div>
+              <div className="txp-th" style={{gridRow:'span 2'}}>Clamp time</div>
+              <div className="txp-th" style={{gridRow:'span 2'}}>De-Clamp</div>
+            </div>
+            <div className="txp-top-sub">
+              <div className="txp-th txp-th-sm">Left</div>
+              <div className="txp-th txp-th-sm">Right</div>
+              <div className="txp-th txp-th-sm">{s.perfusionStart||'—'}</div>
+              <div className="txp-th txp-th-sm">{s.perfusionEnd||'—'}</div>
+              <div className="txp-th txp-th-sm">{s.transplantStart||'—'}</div>
+              <div className="txp-th txp-th-sm">{s.transplantEnd||'—'}</div>
+            </div>
+            <div className="txp-top-data">
+              <div className="txp-td">{txpFmtDate(s.date)}</div>
+              <div className="txp-td">{s.perfusionSolution||'—'}</div>
+              <div className="txp-td" style={{fontSize:'18px'}}>{s.kidneyLeft ?'☑':'☐'}</div>
+              <div className="txp-td" style={{fontSize:'18px'}}>{s.kidneyRight?'☑':'☐'}</div>
+              <div className="txp-td txp-dur" style={{gridColumn:'span 2'}}>{perfDur||'—'}</div>
+              <div className="txp-td">{s.kidneyOnPt||'—'}</div>
+              <div className="txp-td txp-dur" style={{gridColumn:'span 2'}}>{txpDur||'—'}</div>
+              <div className="txp-td">{s.clampTime||'—'}</div>
+              <div className="txp-td">{s.deClampTime||'—'}</div>
+            </div>
+          </div>
+
+          {/* BOTTOM SECTION */}
+          <div className="txp-bottom">
+            {/* LEFT – Staff */}
+            <div className="txp-staff-col">
+              <div className="txp-label-cyan">Surgeon</div>
+              {s.surgeons.filter(Boolean).map((sg,i)=><div key={i} className="txp-staff-name">{sg}</div>)}
+              <div className="txp-label-orange">Time In
+                <span className="txp-time-val">{s.timeIn||'—'}</span>
+              </div>
+              <div className="txp-label-cyan" style={{marginTop:'6px'}}>SCRUB NURSE</div>
+              {s.scrubNurses.filter(Boolean).map((sn,i)=><div key={i} className="txp-staff-name">{sn}</div>)}
+              <div className="txp-label-orange">Time On
+                <span className="txp-time-val">{s.timeOn||'—'}</span>
+              </div>
+              <div className="txp-label-orange">Time End
+                <span className="txp-time-val">{s.timeEnd||'—'}</span>
+              </div>
+              <div className="txp-label-cyan" style={{marginTop:'6px'}}>Name</div>
+              <div className="txp-staff-name">{s.patientName||'—'}</div>
+              <div className="txp-label-orange">Time Out
+                <span className="txp-time-val">{s.timeOut||'—'}</span>
+              </div>
+              <div className="txp-label-cyan" style={{marginTop:'6px'}}>HN</div>
+              <div className="txp-staff-name">{s.hn||'—'}</div>
+            </div>
+
+            {/* MIDDLE – Definitions */}
+            <div className="txp-defs">
+              <div className="txp-def-row"><b>Perfusion time</b> คือ เวลาขณะ perfusion ก่อนที่จะนำไตเข้าสู่ recipient</div>
+              <div className="txp-def-row"><b>Time on Pt.</b> คือ เวลาที่นำไตมาวางบน Recipient</div>
+              <div className="txp-def-row"><b>Time transplant</b> คือ เวลาที่ Prolene เย็บแรกปักกลางที่เส้นเลือด</div>
+              <div className="txp-def-row"><b>Clamp time</b> คือ เวลา clamp time ของวันที่ Harvest</div>
+              <div className="txp-def-row"><b>De-clamp</b> คือ เวลาที่ปล่อยเลือดจาก Recipient เข้าไต</div>
+              <div className="txp-def-row"><b>Total time</b> คือ เวลา De-clamp ลบ เวลา clamp time</div>
+              {s.note && <div className="txp-def-row" style={{marginTop:'10px',borderTop:'1px solid var(--bd)',paddingTop:'8px'}}><b>หมายเหตุ:</b> {s.note}</div>}
+            </div>
+
+            {/* RIGHT – Dates + Total */}
+            <div className="txp-right-col">
+              <div className="txp-date-pair">
+                <div className="txp-date-cell txp-yellow">
+                  <div className="txp-date-lbl">Clamp Date</div>
+                  <div className="txp-date-sub">(DD/MM/YYYY)</div>
+                  <div className="txp-date-val">{txpFmtDate(s.clampDate)}</div>
+                </div>
+                <div className="txp-date-cell txp-yellow">
+                  <div className="txp-date-lbl">De-Clamp Date</div>
+                  <div className="txp-date-sub">(DD/MM/YYYY)</div>
+                  <div className="txp-date-val">{txpFmtDate(s.deClampDate)}</div>
+                </div>
+              </div>
+              <div className="txp-total-box">
+                <div className="txp-total-head">Total Time</div>
+                <div className="txp-total-cols">
+                  <div className="txp-total-lbl">Hour</div>
+                  <div className="txp-total-lbl">minute</div>
+                </div>
+                <div className="txp-total-vals">
+                  <div className="txp-total-num">{total ? total.h : '—'}</div>
+                  <div className="txp-total-num">{total ? total.m : '—'}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /* ── LIST VIEW ── */
+  return (
+    <div className="page">
+      <div className="page-head">
+        <div>
+          <div className="eyebrow">Transplant Report</div>
+          <h1 className="page-title">รายการ Transplant · {cases.length} เคส</h1>
+        </div>
+        {canEdit && (
+          <div className="page-head-actions">
+            <button className="btn btn-primary" onClick={openNew}><Icon k="plus" size={16}/><span>สร้าง Case ใหม่</span></button>
+          </div>
+        )}
+      </div>
+
+      {cases.length===0 ? (
+        <div className="empty">
+          <div className="empty-mark"><Icon k="rep" size={28}/></div>
+          <div className="empty-t">ยังไม่มีเคส Transplant</div>
+          <div className="empty-s">กด "สร้าง Case ใหม่" เพื่อเริ่มบันทึก</div>
+          {canEdit && <button className="btn btn-primary" style={{marginTop:'16px'}} onClick={openNew}><Icon k="plus" size={16}/><span>สร้าง Case ใหม่</span></button>}
+        </div>
+      ) : (
+        <div className="ic-grid" style={{gridTemplateColumns:'repeat(auto-fill,minmax(260px,1fr))'}}>
+          {cases.map((c,i)=>{
+            const total = txpTotalHM(c.clampDate,c.clampTime,c.deClampDate,c.deClampTime);
+            return (
+              <div key={c.id} className="txp-case-card" onClick={()=>openDetail(c)}>
+                <div className="txp-case-top">
+                  <div className="txp-case-num">Case #{i+1}</div>
+                  <div className="txp-case-date">{txpFmtDate(c.date)}</div>
+                </div>
+                <div className="txp-case-patient">{c.patientName||'—'}</div>
+                <div className="txp-case-hn">HN: {c.hn||'—'}</div>
+                <div className="txp-case-badges">
+                  {c.kidneyLeft  && <span className="pill pill-ok" style={{fontSize:'11px'}}><span className="pill-dot"/>Left</span>}
+                  {c.kidneyRight && <span className="pill pill-warn" style={{fontSize:'11px'}}><span className="pill-dot"/>Right</span>}
+                  {c.perfusionSolution && <span style={{fontSize:'11px',color:'var(--ink-3)'}}>{c.perfusionSolution} ml</span>}
+                </div>
+                {total && <div className="txp-case-total">Total: {total.h} ชม. {total.m} นาที</div>}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ===== Guide screen ===== */
 function GuideScreen() {
   return (

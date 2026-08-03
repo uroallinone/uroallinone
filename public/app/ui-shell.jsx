@@ -66,6 +66,7 @@ const I = {
   cloudoff: <path d="M3 3l18 18M6 18a4 4 0 01-.9-7.9M9 5.6A5 5 0 0115.6 8.7 3.5 3.5 0 0118.9 14M9 18h8"/>,
   book:     <path d="M4 19.5A2.5 2.5 0 016.5 17H20M4 19.5A2.5 2.5 0 004 17V5a2 2 0 012-2h14v10H6.5A2.5 2.5 0 004 15v4.5z"/>,
   receipt:  <path d="M4 2v20l3-2 2 2 2-2 2 2 2-2 2 2 3-2V2l-3 2-2-2-2 2-2-2-2 2-2-2-3 2Zm2 5h12M6 10h12M6 14h8"/>,
+  xplant:   <path d="M12 3C9 3 7 5 7 8c0 2 1 3.5 2.5 4.5L8 16h8l-1.5-3.5C16 11.5 17 10 17 8c0-3-2-5-5-5ZM8 16v2a1 1 0 001 1h6a1 1 0 001-1v-2M10 8h4M12 6v4"/>,
 };
 function Icon({ k, size = 18, stroke = 1.8, className = '' }) {
   return (
@@ -84,8 +85,9 @@ const NAV = [
   { id: 'stockout',    label: 'รายการใช้/ตัดสต๊อก', icon: 'out'  },
   { id: 'remaining',   label: 'พัสดุคงเหลือ',       icon: 'alert'},
   { id: 'po',          label: 'ติดตาม OD',          icon: 'truck'},
-  { id: 'smcguide',    label: 'คู่มือ SMC Scrub',    icon: 'receipt' },
-  { id: 'guide',       label: 'คู่มือส่งเครื่องมือ', icon: 'book' },
+  { id: 'smcguide',    label: 'คู่มือ SMC Scrub',    icon: 'receipt'  },
+  { id: 'transplant',  label: 'Transplant Report',   icon: 'xplant'   },
+  { id: 'guide',       label: 'คู่มือส่งเครื่องมือ', icon: 'book'    },
 ];
 
 function Sidebar({ active, onNav, open, onClose, collapsed, user, onLogout }) {
@@ -658,8 +660,9 @@ const BOTTOM_NAV = [
   { id: 'stockout',    label: 'เบิกใช้',     icon: 'out'     },
   { id: 'remaining',   label: 'คงเหลือ',     icon: 'alert'   },
   { id: 'po',          label: 'OD',          icon: 'truck'   },
-  { id: 'smcguide',    label: 'SMC',         icon: 'receipt' },
-  { id: 'guide',       label: 'คู่มือ',      icon: 'book'    },
+  { id: 'smcguide',    label: 'SMC',         icon: 'receipt'  },
+  { id: 'transplant',  label: 'Transplant',  icon: 'xplant'   },
+  { id: 'guide',       label: 'คู่มือ',      icon: 'book'     },
 ];
 
 function BottomNav({ active, onNav }) {
