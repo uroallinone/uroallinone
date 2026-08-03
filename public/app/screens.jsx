@@ -2327,7 +2327,7 @@ function txpEmpty() {
     clampTime: '', clampDate: new Date().toISOString().slice(0,10),
     deClampTime: '', deClampDate: new Date().toISOString().slice(0,10),
     surgeons: ['','','',''],
-    scrubNurses: ['','',''],
+    scrubNurses: ['','','',''],
     timeIn: '', timeOn: '', timeEnd: '', timeOut: '',
     patientName: '', hn: '', note: '',
   };
@@ -2368,7 +2368,14 @@ function TransplantScreen({ cases=[], canEdit, onSave, onDelete }) {
   const setScrub    = (i,v) => setForm(f=>{ const a=[...f.scrubNurses];a[i]=v;return {...f,scrubNurses:a};});
 
   const openNew  = ()        => { setForm(txpEmpty()); setView('form'); };
-  const openEdit = c         => { setForm({...c});     setView('form'); };
+  const openEdit = c         => {
+    const surgeons    = [...(c.surgeons    || [])];
+    const scrubNurses = [...(c.scrubNurses || [])];
+    while (surgeons.length    < 4) surgeons.push('');
+    while (scrubNurses.length < 4) scrubNurses.push('');
+    setForm({...c, surgeons, scrubNurses});
+    setView('form');
+  };
   const openDetail = c       => { setSelected(c);      setView('detail'); };
   const saveForm = ()        => { onSave(form); setView('list'); setForm(null); };
 
@@ -2453,9 +2460,16 @@ function TransplantScreen({ cases=[], canEdit, onSave, onDelete }) {
           <div className="card txp-section">
             <div className="txp-sec-title">Surgeon</div>
             <div className="txp-row2">
-              {form.surgeons.map((s,i)=>(
+              {[0,1,2,3].map(i=>(
                 <label key={i} className="lbl">Surgeon {i+1}
-                  <input value={s} onChange={e=>setSurgeon(i,e.target.value)} placeholder="พ.เอกณัฏฐ์"/>
+                  <select value={form.surgeons[i]||''} onChange={e=>setSurgeon(i,e.target.value)} className="txp-select">
+                    <option value="">— เลือก —</option>
+                    <option>พ.เอกณัฏฐ์</option>
+                    <option>พ.กฤษณะ</option>
+                    <option>พ.ชัยพร</option>
+                    <option>พ.สุธี</option>
+                    <option>พ.ปพน</option>
+                  </select>
                 </label>
               ))}
             </div>
@@ -2464,9 +2478,25 @@ function TransplantScreen({ cases=[], canEdit, onSave, onDelete }) {
           <div className="card txp-section">
             <div className="txp-sec-title">Scrub Nurse</div>
             <div className="txp-row2">
-              {form.scrubNurses.map((s,i)=>(
+              {[0,1,2,3].map(i=>(
                 <label key={i} className="lbl">Scrub Nurse {i+1}
-                  <input value={s} onChange={e=>setScrub(i,e.target.value)} placeholder="พว.กิ่งแก้ว นรรัตน์"/>
+                  <select value={form.scrubNurses[i]||''} onChange={e=>setScrub(i,e.target.value)} className="txp-select">
+                    <option value="">— เลือก —</option>
+                    <option>พว.กิ่งแก้ว นรรัตน์</option>
+                    <option>พว.ปกรณ์ ชัยน่าน</option>
+                    <option>พว.ปิยะพงษ์ ปงลังกา</option>
+                    <option>พว.สิริภา เชื่ออยู่นาน</option>
+                    <option>พว.อนวัช ดั้นเมฆ</option>
+                    <option>พว.ประดิพัทธ์ จันทราพูน</option>
+                    <option>พว.วิลาพร ทิวงศ์</option>
+                    <option>พว.กัลยรัตน์ มหาเทพ</option>
+                    <option>พว.นิรดา ราชคมน์</option>
+                    <option>พว.เฌอลินย์ สิริกรณ์พิบูลย์</option>
+                    <option>พว.ฤทัยรัตน์ สุริยน</option>
+                    <option>พว.จุไรรัตน์ จิตระแวง</option>
+                    <option>พว.กมลชนก ฟองคำ</option>
+                    <option>พว.วิราภรณ์ คันทะวงศ์</option>
+                  </select>
                 </label>
               ))}
             </div>

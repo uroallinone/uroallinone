@@ -2029,20 +2029,22 @@ body {
    Transplant Report
 ================================================================== */
 /* Form */
-.txp-form { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; padding: 0 16px 80px; }
-@media (max-width: 720px) { .txp-form { grid-template-columns: 1fr; } }
-.txp-section { padding: 16px 18px 18px; }
-.txp-sec-title { font-size: 13px; font-weight: 700; color: var(--ink-3); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 12px; }
-.txp-row3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-.txp-row2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.txp-form { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 0 12px 80px; max-width: 900px; }
+@media (max-width: 720px) { .txp-form { grid-template-columns: 1fr; padding: 0 8px 80px; } }
+.txp-section { padding: 12px 14px 14px; }
+.txp-sec-title { font-size: 11px; font-weight: 700; color: var(--ink-3); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 10px; }
+.txp-row3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.txp-row2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
 @media (max-width: 480px) { .txp-row3, .txp-row2 { grid-template-columns: 1fr; } }
-.txp-calc-hint { font-size: 12px; color: var(--accent); margin-top: 8px; }
-.txp-total-preview { display: flex; align-items: center; gap: 8px; margin-top: 10px; padding: 10px 14px; background: var(--ok-soft); border-radius: 8px; font-size: 13px; color: var(--ok); }
-.txp-note { width: 100%; resize: vertical; border: 1px solid var(--bd); border-radius: 8px; padding: 10px 12px; font: inherit; font-size: 13px; background: var(--bg); color: var(--ink); outline: none; }
+.txp-calc-hint { font-size: 12px; color: var(--accent); margin-top: 6px; }
+.txp-total-preview { display: flex; align-items: center; gap: 8px; margin-top: 8px; padding: 8px 12px; background: var(--ok-soft); border-radius: 8px; font-size: 13px; color: var(--ok); }
+.txp-note { width: 100%; resize: vertical; border: 1px solid var(--bd); border-radius: 8px; padding: 8px 12px; font: inherit; font-size: 13px; background: var(--bg); color: var(--ink); outline: none; }
 .txp-note:focus { border-color: var(--accent); }
+.txp-select { width: 100%; border: 1px solid var(--bd); border-radius: 8px; padding: 8px 10px; font: inherit; font-size: 13px; background: var(--bg); color: var(--ink); outline: none; cursor: pointer; }
+.txp-select:focus { border-color: var(--accent); }
 
 /* Sheet detail view */
-.txp-sheet { margin: 0 16px 80px; border: 1px solid var(--bd); border-radius: 12px; overflow: hidden; background: var(--surface); }
+.txp-sheet { margin: 0 12px 80px; border: 1px solid var(--bd); border-radius: 12px; overflow: hidden; background: var(--surface); max-width: 960px; }
 
 /* Top table */
 .txp-top-table { overflow-x: auto; }
@@ -2067,11 +2069,11 @@ body {
 .txp-dur { font-size: 11px; color: var(--accent); font-weight: 600; }
 
 /* Bottom section */
-.txp-bottom { display: grid; grid-template-columns: 200px 1fr 240px; gap: 0; border-top: 1px solid var(--bd); }
+.txp-bottom { display: grid; grid-template-columns: 190px 1fr 220px; gap: 0; border-top: 1px solid var(--bd); }
 @media (max-width: 900px) { .txp-bottom { grid-template-columns: 1fr; } }
 
 /* Staff column */
-.txp-staff-col { padding: 12px 14px; border-right: 1px solid var(--bd); }
+.txp-staff-col { padding: 10px 12px; border-right: 1px solid var(--bd); }
 .txp-label-cyan { background: #0d9488; color: #fff; font-size: 11px; font-weight: 700; padding: 4px 8px; margin: 4px -4px 4px; border-radius: 4px; }
 .txp-label-orange { background: #f97316; color: #fff; font-size: 11px; font-weight: 700; padding: 4px 8px; margin: 4px -4px 2px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; }
 .txp-time-val { font-weight: 800; }
@@ -2082,7 +2084,7 @@ body {
 .txp-def-row b { color: var(--ink); }
 
 /* Right column */
-.txp-right-col { padding: 12px 14px; }
+.txp-right-col { padding: 10px 12px; }
 .txp-date-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
 .txp-date-cell { text-align: center; border-radius: 8px; padding: 8px 6px; }
 .txp-yellow { background: #fef08a; color: #713f12; }
@@ -2095,7 +2097,7 @@ body {
 .txp-total-lbl { font-size: 11px; font-weight: 600; text-align: center; padding: 5px; color: #1e3a5f; border-right: 1px solid #93c5fd; }
 .txp-total-lbl:last-child { border-right: 0; }
 .txp-total-vals { display: grid; grid-template-columns: 1fr 1fr; }
-.txp-total-num { font-size: 32px; font-weight: 800; text-align: center; padding: 12px 6px; color: var(--ink); border-right: 1px solid var(--bd); }
+.txp-total-num { font-size: 52px; font-weight: 900; text-align: center; padding: 14px 6px; color: var(--ink); border-right: 1px solid var(--bd); letter-spacing: -1px; }
 .txp-total-num:last-child { border-right: 0; }
 
 /* Case cards */
@@ -2255,11 +2257,11 @@ body {
 <script src="/app/smc-data.js"></script>
 <script src="/app/uro-supabase.js"></script>
 
-<script type="text/babel" src="/app/tweaks-panel.jsx?v=20260628"></script>
-<script type="text/babel" src="/app/data.jsx?v=20260628"></script>
-<script type="text/babel" src="/app/ui-shell.jsx?v=20260628"></script>
-<script type="text/babel" src="/app/screens.jsx?v=20260628"></script>
-<script type="text/babel" src="/app/main.jsx?v=20260628"></script>
+<script type="text/babel" src="/app/tweaks-panel.jsx?v=20260803"></script>
+<script type="text/babel" src="/app/data.jsx?v=20260803"></script>
+<script type="text/babel" src="/app/ui-shell.jsx?v=20260803"></script>
+<script type="text/babel" src="/app/screens.jsx?v=20260803"></script>
+<script type="text/babel" src="/app/main.jsx?v=20260803"></script>
 
 
 </body></html>
