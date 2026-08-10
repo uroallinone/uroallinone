@@ -1478,7 +1478,7 @@ function POScreen({ pos = [], onChange, canEdit, items = [], onReceive }) {
 
                 {/* Meta */}
                 <div className="od-meta">
-                  <div className="od-meta-r"><Icon k="cal" size={12}/> สั่งเมื่อ {p.date_ordered}</div>
+                  <div className="od-meta-r"><Icon k="cal" size={12}/> สั่งเมื่อ {beToCE(p.date_ordered)}</div>
                   <div className="od-meta-r"><Icon k="building" size={12}/> {p.vendor}</div>
                   <div className="od-meta-r"><Icon k="clock" size={12}/> คาดว่ารับ {p.est_days} วัน</div>
                 </div>
@@ -1527,7 +1527,7 @@ function POScreen({ pos = [], onChange, canEdit, items = [], onReceive }) {
                     </button>
                   )}
                   {p.status === 'RECEIVED' && (
-                    <span style={{fontSize:'11px',color:'var(--ink-3)'}}>รับเมื่อ {p.received_date}</span>
+                    <span style={{fontSize:'11px',color:'var(--ink-3)'}}>รับเมื่อ {beToCE(p.received_date)}</span>
                   )}
                   <div style={{marginLeft:'auto',display:'flex',gap:'5px'}}>
                     {canEdit && <button className="btn btn-mini btn-ghost" onClick={()=>setEditPO(p)}>✏️</button>}
@@ -1558,7 +1558,11 @@ function parseBEDate(s) {
 }
 function formatBEDate(s) {
   const p = parseBEDate(s);
-  return `${p.d} ${THAI_MONTHS_FULL[p.m]} ${p.y}`;
+  return `${p.d} ${THAI_MONTHS_FULL[p.m]} ${p.y - 543}`;
+}
+function beToCE(s) {
+  if (!s) return '';
+  return s.replace(/^(\d{4})/, y => String(Number(y) - 543));
 }
 function toBEString(y, m, d) {
   return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
@@ -1634,7 +1638,7 @@ function ThaiDatePicker({ value, onChange }) {
         }}>
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'8px' }}>
             <button type="button" className="icon-btn" onClick={prevMonth}>‹</button>
-            <div style={{ fontWeight:600, fontSize:'13.5px' }}>{THAI_MONTHS_FULL[viewM]} {viewY}</div>
+            <div style={{ fontWeight:600, fontSize:'13.5px' }}>{THAI_MONTHS_FULL[viewM]} {viewY - 543}</div>
             <button type="button" className="icon-btn" onClick={nextMonth}>›</button>
           </div>
           <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', gap:'2px', marginBottom:'4px' }}>
