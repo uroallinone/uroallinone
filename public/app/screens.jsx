@@ -2255,8 +2255,11 @@ function SMCGuideScreen({ user }) {
             { key:'nurseAid', label:'Nurse Aid',   accent:true },
           ];
           const icdLetter = /[A-Za-z]$/.test(d.icd9);
-          const cDfSx   = codes.dfSx   || (sitthi==='crh' ? d.icd9 + (icdLetter ? 'DF'  : 'DDF')  : null);
-          const cDfAnes = codes.dfAnes  || (sitthi==='crh' && s.dfAnes > 0 ? d.icd9 + (icdLetter ? 'NDF' : 'ANDF') : null);
+          const baseSx   = d.icd9 + (icdLetter ? 'DF'  : 'DDF');
+          const baseAnes = d.icd9 + (icdLetter ? 'NDF' : 'ANDF');
+          const sfx = sitthi==='ins' ? '-I' : sitthi==='th' ? '-F' : '';
+          const cDfSx   = codes.dfSx   || (baseSx + sfx);
+          const cDfAnes = codes.dfAnes  || (s.dfAnes > 0 ? baseAnes + sfx : null);
           return (
             <div key={fi} className="smc-card">
               <div className="smc-card-top">
