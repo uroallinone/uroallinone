@@ -1350,6 +1350,7 @@ function POScreen({ pos = [], onChange, canEdit, items = [], onReceive }) {
   const [editPO, setEditPO] = useS(null);
   const [now, setNow] = useS(Date.now());
   const [confirmOd, setConfirmOd] = useS(null);
+  const [q, setQ] = useS('');
   const [receiveDate, setReceiveDate] = useS(() => { const t = new Date(); return `${t.getFullYear()+543}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`; });
   const [expDate, setExpDate] = useS('');
 
@@ -1416,6 +1417,15 @@ function POScreen({ pos = [], onChange, canEdit, items = [], onReceive }) {
         <StatCard tone="bad"    icon="alert" big={fmt(counts.alert)} label="รอเกิน 180 วัน" sub="ต้องติดตามผู้จำหน่าย"/>
       </div>
 
+      <div className="smc-search-wrap" style={{marginBottom:'12px'}}>
+        <Icon k="search" size={16} className="smc-search-icon"/>
+        <input
+          className="smc-search"
+          placeholder="ค้นหาเลข OD, ชื่อสินค้า, ผู้จำหน่าย…"
+          value={q} onChange={e=>setQ(e.target.value)}
+        />
+      </div>
+
       {counts.alert > 0 && (
         <div className="banner banner-bad">
           <Icon k="alert" size={18}/>
@@ -1436,7 +1446,14 @@ function POScreen({ pos = [], onChange, canEdit, items = [], onReceive }) {
           </div>
         </div>
         <div className="od-grid">
-          {enriched.map(p => {
+          {enriched.filter(p => {
+            if (!q) return true;
+            const s = q.toLowerCase();
+            return p.od_no?.toLowerCase().includes(s)
+              || p.vendor?.toLowerCase().includes(s)
+              || p.items?.toLowerCase().includes(s)
+              || (Array.isArray(p.line_items) && p.line_items.some(li => li.name?.toLowerCase().includes(s)));
+          }).map(p => {
             const badgeClass = p.status==='RECEIVED' ? 'is-done-b' : p.over180 ? 'is-alert-b' : 'is-pending-b';
             const isPending = p.status !== 'RECEIVED' && !p.over180;
             return (
