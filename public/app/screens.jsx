@@ -2170,6 +2170,88 @@ function SMCEditModal({ item, override, onSave, onClose }) {
   );
 }
 
+/* ===== SMC print helper ===== */
+function printSMCCard(d, s, sitthi, codes, cDfSx, cDfAnes) {
+  const sfx        = sitthi==='ins' ? '-I' : sitthi==='th' ? '-F' : '';
+  const size       = d.t === 'gt2' ? 2 : 1;
+  const sizeLabel  = d.t === 'gt2' ? 'ใหญ่' : 'เล็ก';
+  const nurseCount = d.t === 'gt2' ? 3 : 2;
+  const sitthiLbl  = { crh:'CRH', ins:'Insurance', th:'ต่างชาติ' }[sitthi] || sitthi;
+  const anMethod   = s.dfAnes > 0 ? 'GA' : 'LA';
+  const fmt        = n => n ? Number(n).toLocaleString() : '0';
+
+  const roomCode  = codes.room  || ('OR'  + size + 'SMC' + sfx);
+  const scrubCode = codes.scrub || ('NU'  + size + 'DF'  + sfx);
+  const anesNCode = codes.anesN || ('AN'  + size + 'DF'  + sfx);
+
+  const rows = [];
+  if (s.dfSx)   rows.push({ code: cDfSx,    desc: 'ค่าธรรมเนียมแพทย์เฉพาะทาง ' + d.name, amt: s.dfSx });
+  if (s.dfAnes) rows.push({ code: cDfAnes,   desc: 'ค่าธรรมเนียมแพทย์เฉพาะทางสำหรับวิสัญญีแพทย์ ' + d.name, amt: s.dfAnes });
+  if (s.room)   rows.push({ code: roomCode,  desc: 'ค่าธรรมเนียมใช้ห้องผ่าตัด (' + sizeLabel + ')', amt: s.room });
+  if (s.scrub)  {
+    const rate = Math.round(s.scrub / nurseCount);
+    rows.push({ code: scrubCode, desc: 'ค่าธรรมเนียมพยาบาล (ผ่าตัด' + sizeLabel + ') (' + rate + ' บาท/' + nurseCount + 'คน)', amt: s.scrub });
+  }
+  if (s.anesN)  rows.push({ code: anesNCode, desc: 'ค่าธรรมเนียมวิสัญญีพยาบาล (ผ่าตัด' + sizeLabel + ') (' + s.anesN + ' บาท/1คน)', amt: s.anesN });
+
+  const rowsHTML  = rows.map(r =>
+    '<tr><td>&nbsp;</td><td>&nbsp;</td><td style="font-weight:700;white-space:nowrap">' + r.code +
+    '</td><td>' + r.desc + '</td><td style="text-align:right;white-space:nowrap">' + fmt(r.amt) + '</td></tr>'
+  ).join('');
+  const emptyHTML = Array(Math.max(0, 5 - rows.length)).fill(
+    '<tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>'
+  ).join('');
+
+  const html = '<!DOCTYPE html><html lang="th"><head><meta charset="utf-8">' +
+    '<title>SMC URO - ' + d.name + '</title><style>' +
+    '*{margin:0;padding:0;box-sizing:border-box}' +
+    '@page{size:A4;margin:18mm 18mm 18mm 22mm}' +
+    'body{font-family:"TH Sarabun New","Sarabun",Arial,sans-serif;font-size:14pt;color:#000;background:#fff}' +
+    '.title{text-align:center;font-size:20pt;font-weight:bold;margin-bottom:18px}' +
+    '.title u{margin-right:32px}' +
+    '.top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px}' +
+    '.top-left{flex:1;line-height:2.2}' +
+    '.photo-box{width:130px;height:100px;border:1.5px solid #000;flex-shrink:0;margin-left:20px}' +
+    '.sitthi{margin-bottom:14px;line-height:2.2}' +
+    'table{width:100%;border-collapse:collapse;margin-bottom:14px;font-size:13pt}' +
+    'td,th{border:1px solid #000;padding:4px 8px}' +
+    'th{text-align:center}' +
+    '@media print{body{-webkit-print-color-adjust:exact}}' +
+    '</style></head><body>' +
+    '<div class="title"><u>แบบลงทะเบียนผู้ป่วยผ่าตัด</u>&nbsp;&nbsp;&nbsp;&nbsp;SMC&nbsp;&nbsp;URO</div>' +
+    '<div class="top"><div class="top-left">' +
+    '<div>วัน-เดือน-ปี................................</div>' +
+    '<div>DX..................................................</div>' +
+    '<div>&#9744;&nbsp;&nbsp;Right</div>' +
+    '<div>&#9744;&nbsp;&nbsp;Left</div>' +
+    '<div>..........&nbsp;&nbsp;<strong>' + d.name + '</strong>&nbsp;&nbsp;รหัส..' + d.icd9 + '......</div>' +
+    '</div><div class="photo-box"></div></div>' +
+    '<div class="sitthi">สิทธิบัตร....' + sitthiLbl + '..........</div>' +
+    '<table>' +
+    '<tr><td style="width:42%">ศัลยแพทย์</td><td></td></tr>' +
+    '<tr><td>เวลาเริ่ม</td><td></td></tr>' +
+    '<tr><td>เวลาเสร็จ</td><td></td></tr>' +
+    '<tr><td>&nbsp;</td><td></td></tr>' +
+    '</table>' +
+    '<table>' +
+    '<tr><td style="width:42%">วิธีการตมยา&nbsp;&nbsp;&nbsp;' + anMethod + '</td><td></td></tr>' +
+    '<tr><td>&nbsp;</td><td></td></tr>' +
+    '</table>' +
+    '<table>' +
+    '<tr><th style="width:5%">&nbsp;</th><th style="width:5%">&nbsp;</th>' +
+    '<th style="width:18%">รหัส</th><th>รายการ</th><th style="width:13%">จำนวน</th></tr>' +
+    rowsHTML + emptyHTML +
+    '<tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td>' +
+    '<td style="text-align:right;font-weight:700">รวมจ่าย</td>' +
+    '<td style="text-align:right;font-weight:700;white-space:nowrap">' + fmt(s.total) + '</td></tr>' +
+    '</table>' +
+    '</body><script>window.onload=function(){window.print();}<\/script></html>';
+
+  const w = window.open('', '_blank', 'width=820,height=1060');
+  w.document.write(html);
+  w.document.close();
+}
+
 /* ===== SMC Guide screen ===== */
 function SMCGuideScreen({ user }) {
   const [q, setQ] = useS('');
@@ -2266,6 +2348,7 @@ function SMCGuideScreen({ user }) {
                 <div className="smc-name">{d.name}</div>
                 <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
                   <div className="smc-total">{b(s.total)}</div>
+                  <button className="smc-edit-btn" title="พิมพ์แบบฟอร์ม" onClick={()=>printSMCCard(d, s, sitthi, codes, cDfSx, cDfAnes)}>🖨️</button>
                   {canEdit && (
                     <button className="smc-edit-btn" title="แก้ไขราคา" onClick={()=>setEditIdx(idx)}>✏️</button>
                   )}
