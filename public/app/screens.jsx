@@ -2660,37 +2660,35 @@ function TransplantScreen({ cases=[], canEdit, onSave, onDelete }) {
         {/* ── Sheet-style report ── */}
         <div className="txp-sheet">
 
-          {/* TOP TABLE */}
+          {/* TOP TABLE — unified grid so rowspan works correctly */}
           <div className="txp-top-table">
-            {/* Header row */}
-            <div className="txp-top-hdr">
-              <div className="txp-th" style={{gridRow:'span 2'}}>Date</div>
-              <div className="txp-th" style={{gridRow:'span 2'}}>Perfusion<br/>Solution (ml.)</div>
-              <div className="txp-th" style={{gridColumn:'span 2'}}>Kidney</div>
-              <div className="txp-th" style={{gridColumn:'span 2'}}>Perfusion Time</div>
-              <div className="txp-th" style={{gridRow:'span 2'}}>Time<br/>Kidney on Pt.</div>
-              <div className="txp-th" style={{gridColumn:'span 2'}}>Time Transplant</div>
-              <div className="txp-th" style={{gridRow:'span 2'}}>Clamp time</div>
-              <div className="txp-th" style={{gridRow:'span 2'}}>De-Clamp</div>
-            </div>
-            <div className="txp-top-sub">
-              <div className="txp-th txp-th-sm">Left</div>
-              <div className="txp-th txp-th-sm">Right</div>
-              <div className="txp-th txp-th-sm">{s.perfusionStart||'—'}</div>
-              <div className="txp-th txp-th-sm">{s.perfusionEnd||'—'}</div>
-              <div className="txp-th txp-th-sm">{s.transplantStart||'—'}</div>
-              <div className="txp-th txp-th-sm">{s.transplantEnd||'—'}</div>
-            </div>
-            <div className="txp-top-data">
-              <div className="txp-td">{txpFmtDate(s.date)}</div>
-              <div className="txp-td">{s.perfusionSolution||'—'}</div>
-              <div className="txp-td" style={{fontSize:'18px'}}>{s.kidneyLeft ?'☑':'☐'}</div>
-              <div className="txp-td" style={{fontSize:'18px'}}>{s.kidneyRight?'☑':'☐'}</div>
-              <div className="txp-td txp-dur" style={{gridColumn:'span 2'}}>{perfDur||'—'}</div>
-              <div className="txp-td">{s.kidneyOnPt||'—'}</div>
-              <div className="txp-td txp-dur" style={{gridColumn:'span 2'}}>{txpDur||'—'}</div>
-              <div className="txp-td">{s.clampTime||'—'}</div>
-              <div className="txp-td">{s.deClampTime||'—'}</div>
+            <div className="txp-top-grid">
+              {/* Row 1–2 headers (span 2 rows) */}
+              <div className="txp-th" style={{gridColumn:1,gridRow:'1/3'}}>Date</div>
+              <div className="txp-th" style={{gridColumn:2,gridRow:'1/3'}}>Perfusion<br/>Solution (ml.)</div>
+              <div className="txp-th" style={{gridColumn:'3/5',gridRow:1}}>Kidney</div>
+              <div className="txp-th" style={{gridColumn:'5/7',gridRow:1}}>Perfusion Time</div>
+              <div className="txp-th" style={{gridColumn:7,gridRow:'1/3'}}>Time<br/>Kidney on Pt.</div>
+              <div className="txp-th" style={{gridColumn:'8/10',gridRow:1}}>Time Transplant</div>
+              <div className="txp-th" style={{gridColumn:10,gridRow:'1/3'}}>Clamp time</div>
+              <div className="txp-th" style={{gridColumn:11,gridRow:'1/3'}}>De-Clamp</div>
+              {/* Row 2 sub-headers */}
+              <div className="txp-th txp-th-sm" style={{gridColumn:3,gridRow:2}}>Left</div>
+              <div className="txp-th txp-th-sm" style={{gridColumn:4,gridRow:2}}>Right</div>
+              <div className="txp-th txp-th-sm" style={{gridColumn:5,gridRow:2}}>{s.perfusionStart||'—'}</div>
+              <div className="txp-th txp-th-sm" style={{gridColumn:6,gridRow:2}}>{s.perfusionEnd||'—'}</div>
+              <div className="txp-th txp-th-sm" style={{gridColumn:8,gridRow:2}}>{s.transplantStart||'—'}</div>
+              <div className="txp-th txp-th-sm" style={{gridColumn:9,gridRow:2}}>{s.transplantEnd||'—'}</div>
+              {/* Row 3 data */}
+              <div className="txp-td" style={{gridColumn:1,gridRow:3}}>{txpFmtDate(s.date)}</div>
+              <div className="txp-td" style={{gridColumn:2,gridRow:3}}>{s.perfusionSolution||'—'}</div>
+              <div className="txp-td" style={{gridColumn:3,gridRow:3,fontSize:'18px'}}>{s.kidneyLeft ?'☑':'☐'}</div>
+              <div className="txp-td" style={{gridColumn:4,gridRow:3,fontSize:'18px'}}>{s.kidneyRight?'☑':'☐'}</div>
+              <div className="txp-td txp-dur" style={{gridColumn:'5/7',gridRow:3}}>{perfDur||'—'}</div>
+              <div className="txp-td" style={{gridColumn:7,gridRow:3,fontSize:'22px',fontWeight:800}}>{s.kidneyOnPt||'—'}</div>
+              <div className="txp-td txp-dur" style={{gridColumn:'8/10',gridRow:3}}>{txpDur||'—'}</div>
+              <div className="txp-td" style={{gridColumn:10,gridRow:3,fontSize:'22px',fontWeight:800}}>{s.clampTime||'—'}</div>
+              <div className="txp-td" style={{gridColumn:11,gridRow:3,fontSize:'22px',fontWeight:800}}>{s.deClampTime||'—'}</div>
             </div>
           </div>
 
