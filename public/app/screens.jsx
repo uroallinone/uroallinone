@@ -2254,6 +2254,9 @@ function SMCGuideScreen({ user }) {
             { key:'anesN',    label:'Anes Nurse',  accent:true },
             { key:'nurseAid', label:'Nurse Aid',   accent:true },
           ];
+          const icdLetter = /[A-Za-z]$/.test(d.icd9);
+          const cDfSx   = codes.dfSx   || (sitthi==='crh' ? d.icd9 + (icdLetter ? 'DF'  : 'DDF')  : null);
+          const cDfAnes = codes.dfAnes  || (sitthi==='crh' && s.dfAnes > 0 ? d.icd9 + (icdLetter ? 'NDF' : 'ANDF') : null);
           return (
             <div key={fi} className="smc-card">
               <div className="smc-card-top">
@@ -2274,13 +2277,17 @@ function SMCGuideScreen({ user }) {
               <div className="smc-div"/>
 
               <div className="smc-fee-grid">
-                {FEE1.map(f => (
-                  <div key={f.key} className="smc-fee-cell">
-                    <div className="smc-fee-lbl">{f.label}</div>
-                    <div className={cx('smc-fee-val', f.accent && 'accent')}>{b(s[f.key])}</div>
-                    {codes[f.key] && <div className="smc-code">{codes[f.key]}</div>}
-                  </div>
-                ))}
+                {FEE1.map(f => {
+                  const bCode = f.key==='dfSx' ? cDfSx : f.key==='dfAnes' ? cDfAnes : null;
+                  return (
+                    <div key={f.key} className="smc-fee-cell">
+                      <div className="smc-fee-lbl">{f.label}</div>
+                      {bCode && <div className="smc-billing-code">{bCode}</div>}
+                      <div className={cx('smc-fee-val', f.accent && 'accent')}>{b(s[f.key])}</div>
+                      {!bCode && codes[f.key] && <div className="smc-code">{codes[f.key]}</div>}
+                    </div>
+                  );
+                })}
               </div>
 
               <div className="smc-div"/>
