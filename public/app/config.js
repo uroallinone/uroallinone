@@ -8,7 +8,11 @@ window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXB
    role: 'viewer' → ดูข้อมูลได้อย่างเดียว ไม่สามารถแก้ไขได้
 */
 window.URO_USERS = [
-  { username: 'Baheang',  password: '46590024166', name: 'Baheang',            role: 'admin'  },
-  { username: 'test',     password: '12345678',     name: 'test',               role: 'viewer' },
-  { username: 'piyas',    password: '46590024',     name: 'ปิยะพงษ์ ปงลังกา',  role: 'viewer' },
+  { username: 'Baheang',     password: '46590024166', name: 'Baheang',                  role: 'admin'  },
+  { username: 'test',        password: '12345678',     name: 'test',                     role: 'viewer' },
+  { username: 'piyas',       password: '46590024',     name: 'ปิยะพงษ์ ปงลังกา',        role: 'viewer' },
+  { username: 'Aomsuriyon',  password: '29111800',     name: 'พว.ฤทัยรัตน์ สุริยน',     role: 'viewer' },
+  { username: 'Si',          password: '4444',         name: 'Si',                       role: 'viewer' },
+  { username: 'modzom_21',   password: 'Mm@12345678',  name: 'วิราภรณ์ คันทะวงค์',      role: 'viewer' },
+  { username: 'boombamhub',  password: 'x4982vrt',     name: 'ประดิพัทธ์ จันทาพูน',     role: 'viewer' },
 ];
