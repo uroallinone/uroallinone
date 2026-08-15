@@ -1025,78 +1025,228 @@ function StockMoveScreen({ kind, items, cats, prefill, onSubmit, user }) {
 }
 
 /* ===== Reports ===== */
-function ReportsScreen({ items, txns, cats }) {
-  const byType = {
-    IN: txns.filter(t=>t.type==='IN').reduce((s,t)=>s+Math.abs(t.qty),0),
-    OUT: txns.filter(t=>t.type==='OUT').reduce((s,t)=>s+Math.abs(t.qty),0),
-    ADJ: txns.filter(t=>t.type==='ADJ').reduce((s,t)=>s+Math.abs(t.qty),0),
+function downloadCSV(filename, rows) {
+  const esc = v => {
+    const s = String(v == null ? '' : v);
+    return (s.includes(',') || s.includes('"') || s.includes('\n'))
+      ? `"${s.replace(/"/g, '""')}"` : s;
   };
+  const csv = '﻿' + rows.map(r => r.map(esc).join(',')).join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+
+function ReportsScreen({ items, txns, cats }) {
+  const [tab, setTab] = useS('movement');
+  const [typeF, setTypeF] = useS('all');
+  const [showFilter, setShowFilter] = useS(false);
+  const [dateFrom, setDateFrom] = useS('');
+  const [dateTo, setDateTo] = useS('');
+
+  const catMap = useM(() => Object.fromEntries((cats||[]).map(c=>[c.id, c.name])), [cats]);
+
+  const filtered = useM(() => txns.filter(t => {
+    if (typeF !== 'all' && t.type !== typeF) return false;
+    if (dateFrom || dateTo) {
+      const d = (t.date||'').slice(0,10);
+      if (dateFrom && d < dateFrom) return false;
+      if (dateTo   && d > dateTo)   return false;
+    }
+    return true;
+  }), [txns, typeF, dateFrom, dateTo]);
+
+  const byType = {
+    IN:  filtered.filter(t=>t.type==='IN').reduce((s,t)=>s+Math.abs(t.qty),0),
+    OUT: filtered.filter(t=>t.type==='OUT').reduce((s,t)=>s+Math.abs(t.qty),0),
+    ADJ: filtered.filter(t=>t.type==='ADJ').reduce((s,t)=>s+Math.abs(t.qty),0),
+  };
+
+  function exportMovement() {
+    const rows = [['เลขที่','วันที่','ประเภท','รหัสพัสดุ','ชื่อพัสดุ','จำนวน','หน่วย','ผู้บันทึก','หมายเหตุ']];
+    filtered.forEach(t => rows.push([
+      t.id, t.date,
+      t.type==='IN'?'รับเข้า':t.type==='OUT'?'เบิกออก':'ปรับยอด',
+      t.code, t.name,
+      (t.type==='OUT'?'-':'+')+Math.abs(t.qty),
+      t.unit||'', t.by||'', t.note||'',
+    ]));
+    downloadCSV('ประวัติการเคลื่อนไหวพัสดุ.csv', rows);
+  }
+
+  function exportStock() {
+    const rows = [['รหัสพัสดุ','รหัส IPISS','ชื่อพัสดุ','หมวดหมู่','จำนวนคงเหลือ','หน่วย','ขั้นต่ำ','ราคา/หน่วย (บาท)','มูลค่าคงเหลือ (บาท)','วันหมดอายุ','ที่เก็บ','สถานะ']];
+    items.forEach(i => {
+      const status = (i.qty||0)<=0?'หมด':(i.qty||0)<=(i.min||0)?'ต่ำกว่าขั้นต่ำ':'ปกติ';
+      rows.push([i.code, i.ipiss||'', i.name, catMap[i.cat]||i.cat||'',
+        i.qty||0, i.unit||'', i.min||0, i.price||0,
+        (i.qty||0)*(i.price||0), i.exp||'', i.loc||'', status]);
+    });
+    downloadCSV('รายงานพัสดุคงเหลือ.csv', rows);
+  }
+
+  const activeFilters = typeF !== 'all' || dateFrom || dateTo;
 
   return (
     <div className="page">
       <div className="page-head">
         <div>
           <div className="eyebrow">รายงาน</div>
-          <h1 className="page-title">รายงานการเคลื่อนไหวพัสดุ</h1>
-          <div className="page-sub">ช่วง 01-05-2569 ถึง 18-05-2569</div>
+          <h1 className="page-title">รายงานพัสดุ</h1>
         </div>
         <div className="page-head-actions">
-          <button className="btn btn-ghost"><Icon k="filter" size={16}/><span>ตัวกรอง</span></button>
-          <button className="btn btn-primary"><Icon k="download" size={16}/><span>ส่งออก CSV</span></button>
+          {tab === 'movement' && <>
+            <button className={cx('btn', activeFilters ? 'btn-primary' : 'btn-ghost')} onClick={()=>setShowFilter(f=>!f)}>
+              <Icon k="filter" size={16}/><span>ตัวกรอง{activeFilters ? ' ●' : ''}</span>
+            </button>
+            <button className="btn btn-ghost" onClick={exportMovement}>
+              <Icon k="download" size={16}/><span>ส่งออก CSV</span>
+            </button>
+          </>}
+          {tab === 'stock' && (
+            <button className="btn btn-primary" onClick={exportStock}>
+              <Icon k="download" size={16}/><span>ส่งออก Excel</span>
+            </button>
+          )}
         </div>
       </div>
 
-      <div className="stat-grid stat-grid-3">
-        <StatCard tone="ok"   icon="in"  big={fmt(byType.IN)}  label="หน่วยที่รับเข้า"  sub={`${txns.filter(t=>t.type==='IN').length} ใบ`}/>
-        <StatCard tone="warn" icon="out" big={fmt(byType.OUT)} label="หน่วยที่เบิกออก" sub={`${txns.filter(t=>t.type==='OUT').length} ใบ`}/>
-        <StatCard tone="accent" icon="edit" big={fmt(byType.ADJ)} label="หน่วยที่ปรับยอด" sub={`${txns.filter(t=>t.type==='ADJ').length} ใบ`}/>
-      </div>
-
-      <section className="card card-table">
-        <div className="card-head">
-          <div className="card-title">ประวัติการเคลื่อนไหว</div>
-          <div className="legend">
-            <span className="legend-item"><span className="dot" style={{ background:'var(--ok)' }}/>รับเข้า</span>
-            <span className="legend-item"><span className="dot" style={{ background:'var(--warn)' }}/>เบิกออก</span>
-            <span className="legend-item"><span className="dot" style={{ background:'var(--accent)' }}/>ปรับยอด</span>
+      {tab === 'movement' && showFilter && (
+        <div className="filter-panel">
+          <div className="fp-row">
+            <span className="fp-lbl">ประเภท</span>
+            <div className="chips-row" style={{marginBottom:0}}>
+              {[['all','ทั้งหมด'],['IN','รับเข้า'],['OUT','เบิกออก'],['ADJ','ปรับยอด']].map(([v,l])=>(
+                <Chip key={v} active={typeF===v} onClick={()=>setTypeF(v)}>{l}</Chip>
+              ))}
+            </div>
+          </div>
+          <div className="fp-row">
+            <span className="fp-lbl">ช่วงวันที่</span>
+            <input type="date" className="fp-date" value={dateFrom} onChange={e=>setDateFrom(e.target.value)}/>
+            <span className="fp-sep">—</span>
+            <input type="date" className="fp-date" value={dateTo} onChange={e=>setDateTo(e.target.value)}/>
+            {activeFilters && (
+              <button className="btn btn-ghost sm" onClick={()=>{setDateFrom('');setDateTo('');setTypeF('all');}}>ล้าง</button>
+            )}
           </div>
         </div>
-        <div className="thead thead-rep">
-          <div className="th">เลขที่</div>
-          <div className="th">วันที่</div>
-          <div className="th">ประเภท</div>
-          <div className="th">พัสดุ</div>
-          <div className="th th-num">จำนวน</div>
-          <div className="th">ผู้บันทึก / หมายเหตุ</div>
+      )}
+
+      <div className="chips-row">
+        <Chip active={tab==='movement'} onClick={()=>{setTab('movement');setShowFilter(false);}}>ประวัติการเคลื่อนไหว</Chip>
+        <Chip active={tab==='stock'} onClick={()=>{setTab('stock');setShowFilter(false);}}>สรุปพัสดุคงเหลือ ({items.length})</Chip>
+      </div>
+
+      {tab === 'movement' && <>
+        <div className="stat-grid stat-grid-3">
+          <StatCard tone="ok"     icon="in"   big={fmt(byType.IN)}  label="หน่วยที่รับเข้า"  sub={`${filtered.filter(t=>t.type==='IN').length} ใบ`}/>
+          <StatCard tone="warn"   icon="out"  big={fmt(byType.OUT)} label="หน่วยที่เบิกออก" sub={`${filtered.filter(t=>t.type==='OUT').length} ใบ`}/>
+          <StatCard tone="accent" icon="edit" big={fmt(byType.ADJ)} label="หน่วยที่ปรับยอด" sub={`${filtered.filter(t=>t.type==='ADJ').length} ใบ`}/>
         </div>
-        <div className="tbody">
-          {txns.map(t => (
-            <div key={t.id} className="tr tr-rep">
-              <div className="td mono">{t.id}</div>
-              <div className="td">{t.date}</div>
-              <div className="td">
-                <span className={cx('txn-type', `txn-${t.type.toLowerCase()}`)}>
-                  <Icon k={t.type==='IN'?'in':t.type==='OUT'?'out':'edit'} size={14}/>
-                  <span>{t.type==='IN'?'รับ':t.type==='OUT'?'เบิก':'ปรับ'}</span>
-                </span>
-              </div>
-              <div className="td">
-                <div className="td-name-main">{t.name}</div>
-                <div className="muted sm mono">{t.code}</div>
-              </div>
-              <div className="td td-num">
-                <span className={cx(t.type==='OUT'&&'is-neg', t.type==='IN'&&'is-pos')}>
-                  {t.type==='OUT'?'−':t.type==='IN'?'+':''}{Math.abs(t.qty)} {t.unit}
-                </span>
-              </div>
-              <div className="td">
-                <div>{t.by}</div>
-                <div className="muted sm">{t.note}</div>
-              </div>
+
+        <section className="card card-table">
+          <div className="card-head">
+            <div className="card-title">ประวัติการเคลื่อนไหว <span className="muted sm">({filtered.length} รายการ)</span></div>
+            <div className="legend">
+              <span className="legend-item"><span className="dot" style={{background:'var(--ok)'}}/>รับเข้า</span>
+              <span className="legend-item"><span className="dot" style={{background:'var(--warn)'}}/>เบิกออก</span>
+              <span className="legend-item"><span className="dot" style={{background:'var(--accent)'}}/>ปรับยอด</span>
             </div>
-          ))}
-        </div>
-      </section>
+          </div>
+          <div className="thead thead-rep">
+            <div className="th">เลขที่</div>
+            <div className="th">วันที่</div>
+            <div className="th">ประเภท</div>
+            <div className="th">พัสดุ</div>
+            <div className="th th-num">จำนวน</div>
+            <div className="th">ผู้บันทึก / หมายเหตุ</div>
+          </div>
+          <div className="tbody">
+            {filtered.length === 0 && (
+              <div style={{padding:'32px',textAlign:'center',color:'var(--ink-3)'}}>ไม่พบรายการที่ตรงกับตัวกรอง</div>
+            )}
+            {filtered.map(t => (
+              <div key={t.id} className="tr tr-rep">
+                <div className="td mono">{t.id}</div>
+                <div className="td">{t.date}</div>
+                <div className="td">
+                  <span className={cx('txn-type', `txn-${t.type.toLowerCase()}`)}>
+                    <Icon k={t.type==='IN'?'in':t.type==='OUT'?'out':'edit'} size={14}/>
+                    <span>{t.type==='IN'?'รับ':t.type==='OUT'?'เบิก':'ปรับ'}</span>
+                  </span>
+                </div>
+                <div className="td">
+                  <div className="td-name-main">{t.name}</div>
+                  <div className="muted sm mono">{t.code}</div>
+                </div>
+                <div className="td td-num">
+                  <span className={cx(t.type==='OUT'&&'is-neg', t.type==='IN'&&'is-pos')}>
+                    {t.type==='OUT'?'−':t.type==='IN'?'+':''}{Math.abs(t.qty)} {t.unit}
+                  </span>
+                </div>
+                <div className="td">
+                  <div>{t.by}</div>
+                  <div className="muted sm">{t.note}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      </>}
+
+      {tab === 'stock' && (
+        <section className="card card-table">
+          <div className="card-head">
+            <div className="card-title">พัสดุคงเหลือทั้งหมด <span className="muted sm">({items.length} รายการ)</span></div>
+          </div>
+          <div className="thead" style={{gridTemplateColumns:'110px 1fr 130px 80px 70px 90px 110px 100px'}}>
+            <div className="th">รหัสพัสดุ</div>
+            <div className="th">ชื่อพัสดุ</div>
+            <div className="th">หมวดหมู่</div>
+            <div className="th th-num">คงเหลือ</div>
+            <div className="th th-num">ขั้นต่ำ</div>
+            <div className="th th-num">ราคา/หน่วย</div>
+            <div className="th th-num">มูลค่าคงเหลือ</div>
+            <div className="th">สถานะ</div>
+          </div>
+          <div className="tbody">
+            {items.map(i => {
+              const st = (i.qty||0)<=0?'out':(i.qty||0)<=(i.min||0)?'low':'ok';
+              return (
+                <div key={i.code} className="tr" style={{gridTemplateColumns:'110px 1fr 130px 80px 70px 90px 110px 100px'}}>
+                  <div className="td mono sm">{i.code}</div>
+                  <div className="td">
+                    <div className="td-name-main">{i.name}</div>
+                    {i.loc && <div className="muted sm">{i.loc}</div>}
+                  </div>
+                  <div className="td">{catMap[i.cat]||i.cat||'—'}</div>
+                  <div className="td td-num">
+                    <b className={st==='out'?'bad':st==='low'?'warn-t':''}>{i.qty||0}</b>
+                    <span className="muted sm"> {i.unit}</span>
+                  </div>
+                  <div className="td td-num muted">{i.min||0}</div>
+                  <div className="td td-num muted">{fmt(i.price||0)}</div>
+                  <div className="td td-num">{fmt((i.qty||0)*(i.price||0))}</div>
+                  <div className="td">
+                    <span className={cx('pill', st==='out'?'pill-out':st==='low'?'pill-warn':'pill-ok')}>
+                      <span className="pill-dot"/>
+                      {st==='out'?'หมด':st==='low'?'ต่ำกว่าขั้นต่ำ':'ปกติ'}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div style={{padding:'12px 16px',borderTop:'1px solid var(--border)',textAlign:'right',fontSize:'13px',color:'var(--ink-2)'}}>
+            มูลค่าพัสดุคงเหลือรวม: <b style={{fontSize:'15px',color:'var(--ink)'}}>
+              {fmt(items.reduce((s,i)=>s+(i.qty||0)*(i.price||0),0))} บาท
+            </b>
+          </div>
+        </section>
+      )}
     </div>
   );
 }

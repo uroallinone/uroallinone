@@ -1899,6 +1899,12 @@ body {
 .smc-fee-val.accent { color: #38bdf8; }
 .smc-code { font-size: 10px; color: #0ea5e9; font-weight: 600; margin-top: 1px; letter-spacing: .3px; }
 .smc-billing-code { font-size: 15px; font-weight: 900; color: #f59e0b; letter-spacing: 0; line-height: 1.1; white-space: nowrap; }
+.filter-panel { background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; margin-bottom: 16px; display: flex; flex-direction: column; gap: 10px; }
+.fp-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.fp-lbl { font-size: 12px; font-weight: 600; color: var(--ink-2); min-width: 64px; }
+.fp-sep { color: var(--ink-3); font-size: 13px; }
+.fp-date { border: 1px solid var(--border); border-radius: 7px; padding: 5px 9px; font-size: 13px; background: var(--surface); color: var(--ink); outline: none; }
+.fp-date:focus { border-color: var(--accent); }
 .smc-edit-btn {
   background: none; border: none; cursor: pointer; font-size: 14px;
   opacity: .55; padding: 2px 4px; border-radius: 6px; transition: opacity .15s;
@@ -2258,11 +2264,11 @@ body {
 <script src="/app/smc-data.js"></script>
 <script src="/app/uro-supabase.js"></script>
 
-<script type="text/babel" src="/app/tweaks-panel.jsx?v=20260810g"></script>
-<script type="text/babel" src="/app/data.jsx?v=20260810g"></script>
-<script type="text/babel" src="/app/ui-shell.jsx?v=20260810g"></script>
-<script type="text/babel" src="/app/screens.jsx?v=20260810g"></script>
-<script type="text/babel" src="/app/main.jsx?v=20260810g"></script>
+<script type="text/babel" src="/app/tweaks-panel.jsx?v=20260815a"></script>
+<script type="text/babel" src="/app/data.jsx?v=20260815a"></script>
+<script type="text/babel" src="/app/ui-shell.jsx?v=20260815a"></script>
+<script type="text/babel" src="/app/screens.jsx?v=20260815a"></script>
+<script type="text/babel" src="/app/main.jsx?v=20260815a"></script>
 
 
 </body></html>
