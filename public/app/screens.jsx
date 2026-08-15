@@ -2825,10 +2825,10 @@ function TransplantScreen({ cases=[], canEdit, onSave, onDelete }) {
               {/* Row 2 sub-headers */}
               <div className="txp-th txp-th-sm" style={{gridColumn:3,gridRow:2}}>Left</div>
               <div className="txp-th txp-th-sm" style={{gridColumn:4,gridRow:2}}>Right</div>
-              <div className="txp-th txp-th-sm" style={{gridColumn:5,gridRow:2}}>{s.perfusionStart||'—'}</div>
-              <div className="txp-th txp-th-sm" style={{gridColumn:6,gridRow:2}}>{s.perfusionEnd||'—'}</div>
-              <div className="txp-th txp-th-sm" style={{gridColumn:8,gridRow:2}}>{s.transplantStart||'—'}</div>
-              <div className="txp-th txp-th-sm" style={{gridColumn:9,gridRow:2}}>{s.transplantEnd||'—'}</div>
+              <div className="txp-th txp-th-time" style={{gridColumn:5,gridRow:2}}>{s.perfusionStart||'—'}</div>
+              <div className="txp-th txp-th-time" style={{gridColumn:6,gridRow:2}}>{s.perfusionEnd||'—'}</div>
+              <div className="txp-th txp-th-time" style={{gridColumn:8,gridRow:2}}>{s.transplantStart||'—'}</div>
+              <div className="txp-th txp-th-time" style={{gridColumn:9,gridRow:2}}>{s.transplantEnd||'—'}</div>
               {/* Row 3 data */}
               <div className="txp-td" style={{gridColumn:1,gridRow:3}}>{txpFmtDate(s.date)}</div>
               <div className="txp-td" style={{gridColumn:2,gridRow:3}}>{s.perfusionSolution||'—'}</div>
