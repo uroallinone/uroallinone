@@ -3,117 +3,83 @@ const { useState: useS, useEffect: useE, useMemo: useM, useRef: useR } = React;
 
 /* ===== Mobile Dashboard (≤720px) ===== */
 function MobileDashboard({ items, txns, onGo }) {
-  const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
-
-  const recentOuts = txns
-    .filter(t => t.type === 'OUT' && new Date(t.date).getTime() >= cutoff)
-    .sort((a, b) => new Date(b.date) - new Date(a.date))
-    .slice(0, 12);
-
-  const restockItems = items
-    .filter(i => statusOf(i) !== 'ok')
-    .sort((a, b) => {
-      const rank = { out: 0, low: 1, warn: 2 };
-      return (rank[statusOf(a)] || 3) - (rank[statusOf(b)] || 3);
-    });
-
+  const outCount  = items.filter(i => statusOf(i) === 'out').length;
+  const lowCount  = items.filter(i => statusOf(i) === 'low' || statusOf(i) === 'warn').length;
   const today = new Date().toLocaleDateString('th-TH', { weekday:'long', day:'numeric', month:'long' });
 
-  const S_COLOR = { warn:'#92400e', low:'#c2410c', out:'#991b1b' };
-  const S_BG    = { warn:'#fef3c7', low:'#fff7ed', out:'#fee2e2' };
-  const S_LABEL = { warn:'เตือน', low:'ใกล้หมด', out:'หมด' };
+  const recentOuts = txns
+    .filter(t => t.type === 'OUT')
+    .sort((a, b) => new Date(b.date) - new Date(a.date))
+    .slice(0, 5);
 
   const MENUS = [
-    { id:'items',       label:'พัสดุหลัก',   icon:'box'     },
-    { id:'consumables', label:'สิ้นเปลือง',  icon:'pkg'     },
-    { id:'equipment',   label:'ครุภัณฑ์',    icon:'gear'    },
-    { id:'stockout',    label:'เบิกใช้',      icon:'out'     },
-    { id:'remaining',   label:'คงเหลือ',      icon:'alert'   },
-    { id:'po',          label:'OD',           icon:'truck'   },
-    { id:'smcguide',    label:'SMC',          icon:'receipt' },
-    { id:'guide',       label:'คู่มือ',       icon:'book'    },
+    { id:'stockout',    label:'เบิกใช้',     icon:'out',     grad:'linear-gradient(135deg,#f97316,#ef4444)' },
+    { id:'items',       label:'พัสดุหลัก',   icon:'box',     grad:'linear-gradient(135deg,#3b82f6,#1d4ed8)' },
+    { id:'consumables', label:'สิ้นเปลือง',  icon:'pkg',     grad:'linear-gradient(135deg,#10b981,#059669)' },
+    { id:'remaining',   label:'คงเหลือ',     icon:'alert',   grad:'linear-gradient(135deg,#f59e0b,#d97706)', badge: outCount+lowCount||null },
+    { id:'po',          label:'OD',          icon:'truck',   grad:'linear-gradient(135deg,#06b6d4,#0891b2)' },
+    { id:'smcguide',    label:'SMC',         icon:'receipt', grad:'linear-gradient(135deg,#6366f1,#4f46e5)' },
+    { id:'transplant',  label:'Transplant',  icon:'xplant',  grad:'linear-gradient(135deg,#8b5cf6,#6d28d9)' },
+    { id:'equipment',   label:'ครุภัณฑ์',    icon:'gear',    grad:'linear-gradient(135deg,#64748b,#334155)' },
   ];
 
   return (
-    <div className="mh-wrap">
-      {/* Header */}
-      <div className="mh-hero">
-        <div className="mh-date">{today}</div>
-        <div className="mh-title">ภาพรวมพัสดุ</div>
-      </div>
-
-      {/* Stat pills */}
-      <div className="mh-stats">
-        <div className="mh-stat">
-          <div className="mh-stat-n">{items.length}</div>
-          <div className="mh-stat-l">รายการ</div>
-        </div>
-        <div className="mh-stat mh-stat--warn">
-          <div className="mh-stat-n">{restockItems.filter(i=>statusOf(i)==='out').length}</div>
-          <div className="mh-stat-l">หมดสต๊อก</div>
-        </div>
-        <div className="mh-stat mh-stat--amber">
-          <div className="mh-stat-n">{restockItems.filter(i=>statusOf(i)!=='out').length}</div>
-          <div className="mh-stat-l">ใกล้หมด</div>
-        </div>
-        <div className="mh-stat">
-          <div className="mh-stat-n">{recentOuts.length}</div>
-          <div className="mh-stat-l">เบิก 7 วัน</div>
-        </div>
-      </div>
-
-      {/* Restock */}
-      {restockItems.length > 0 && (
-        <section className="mh-section">
-          <div className="mh-sec-head">
-            <span className="mh-sec-title">⚠️ ต้องเติมสต๊อก</span>
-            <button className="mh-sec-link" onClick={()=>onGo('remaining')}>ดูทั้งหมด →</button>
+    <div className="mhv2-wrap">
+      {/* Hero header */}
+      <div className="mhv2-hero">
+        <div className="mhv2-date">{today}</div>
+        <div className="mhv2-title">ภาพรวมพัสดุ</div>
+        <div className="mhv2-statbar">
+          <div className="mhv2-pill">
+            <span className="mhv2-pill-n">{items.length}</span>
+            <span className="mhv2-pill-l">รายการ</span>
           </div>
-          {restockItems.slice(0, 8).map(it => {
-            const s = statusOf(it);
-            return (
-              <div key={it.code} className="mh-row" onClick={()=>onGo('items')}>
-                <div className="mh-row-name">{it.name}</div>
-                <div className="mh-row-r">
-                  <span className="mh-qty">{it.qty}<span className="mh-unit"> / {it.min} {it.unit}</span></span>
-                  <span className="mh-badge" style={{ background: S_BG[s], color: S_COLOR[s] }}>{S_LABEL[s]}</span>
-                </div>
-              </div>
-            );
-          })}
-        </section>
-      )}
-
-      {/* Recent usage */}
-      <section className="mh-section">
-        <div className="mh-sec-head">
-          <span className="mh-sec-title">📋 เบิกใช้ 7 วันที่ผ่านมา</span>
-          <button className="mh-sec-link" onClick={()=>onGo('stockout')}>เบิกใหม่ →</button>
-        </div>
-        {recentOuts.length === 0 ? (
-          <div className="mh-empty">ยังไม่มีรายการเบิกใช้ในช่วง 7 วัน</div>
-        ) : recentOuts.map(t => (
-          <div key={t.id} className="mh-row">
-            <div className="mh-row-info">
-              <div className="mh-row-name">{t.name}</div>
-              <div className="mh-row-meta">{(t.date||'').slice(5).replace('-','/')} · {t.by}</div>
+          {outCount > 0 && (
+            <div className="mhv2-pill mhv2-pill--red">
+              <span className="mhv2-pill-n">{outCount}</span>
+              <span className="mhv2-pill-l">หมดสต๊อก</span>
             </div>
-            <div className="mh-qty-out">−{Math.abs(t.qty)} {t.unit}</div>
-          </div>
-        ))}
-      </section>
-
-      {/* Menu grid */}
-      <section className="mh-section">
-        <div className="mh-sec-head"><span className="mh-sec-title">เมนูหลัก</span></div>
-        <div className="mh-menu-grid">
-          {MENUS.map(m => (
-            <button key={m.id} className="mh-menu-card" onClick={()=>onGo(m.id)}>
-              <div className="mh-menu-icon"><Icon k={m.icon} size={28}/></div>
-              <div className="mh-menu-label">{m.label}</div>
-            </button>
-          ))}
+          )}
+          {lowCount > 0 && (
+            <div className="mhv2-pill mhv2-pill--amber">
+              <span className="mhv2-pill-n">{lowCount}</span>
+              <span className="mhv2-pill-l">ใกล้หมด</span>
+            </div>
+          )}
         </div>
+      </div>
+
+      {/* Icon grid — first thing user sees */}
+      <div className="mhv2-grid">
+        {MENUS.map(m => (
+          <button key={m.id} className="mhv2-icon-btn" onClick={()=>onGo(m.id)}>
+            <div className="mhv2-icon-box" style={{background:m.grad}}>
+              <Icon k={m.icon} size={30} stroke={1.8}/>
+              {m.badge ? <span className="mhv2-badge">{m.badge}</span> : null}
+            </div>
+            <div className="mhv2-icon-lbl">{m.label}</div>
+          </button>
+        ))}
+      </div>
+
+      {/* Recent usage — compact */}
+      <section className="mhv2-card">
+        <div className="mhv2-card-head">
+          <span>📋 เบิกล่าสุด</span>
+          <button onClick={()=>onGo('stockout')}>เบิกใหม่ →</button>
+        </div>
+        {recentOuts.length === 0
+          ? <div className="mhv2-empty">ยังไม่มีรายการเบิก</div>
+          : recentOuts.map(t => (
+            <div key={t.id} className="mhv2-row">
+              <div>
+                <div className="mhv2-row-name">{t.name}</div>
+                <div className="mhv2-row-meta">{(t.date||'').slice(5,10).replace('-','/')} · {t.by||''}</div>
+              </div>
+              <div className="mhv2-row-qty">−{Math.abs(t.qty)} {t.unit}</div>
+            </div>
+          ))
+        }
       </section>
     </div>
   );
