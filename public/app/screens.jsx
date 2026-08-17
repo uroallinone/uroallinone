@@ -1267,20 +1267,44 @@ function ageBadge(years) {
 
 function EquipmentScreen({ equipment, canEdit, onAddEquipment, onEditEquipment, onDeleteEquipment, vendors=[], onAddVendor }) {
   const [filter, setFilter] = useS('all');
+  const [searchQ, setSearchQ] = useS('');
   const [showAdd, setShowAdd] = useS(false);
   const [editEq, setEditEq] = useS(null);
-  const today = new Date();
 
   const enriched = equipment.map(e => {
     const yrs = eqAgeYears(e.received);
     return { ...e, years: yrs, badge: ageBadge(yrs) };
   });
 
-  const filtered = enriched
-    .filter(e => filter==='all' ? true : filter==='alert' ? e.years >= 5 : e.years < 5)
-    .sort((a, b) => b.years - a.years);
   const overdue = enriched.filter(e => e.years >= 5).length;
   const totalCost = enriched.reduce((s,e)=>s+e.cost,0);
+
+  const filtered = enriched
+    .filter(e => {
+      if (filter === 'alert' && e.years < 5) return false;
+      if (filter === 'ok'    && e.years >= 5) return false;
+      if (searchQ) {
+        const q = searchQ.toLowerCase();
+        return (e.eq_no||'').toLowerCase().includes(q)
+            || (e.name||'').toLowerCase().includes(q)
+            || (e.supplier||'').toLowerCase().includes(q);
+      }
+      return true;
+    })
+    .sort((a, b) => b.years - a.years);
+
+  function exportEquipment() {
+    const rows = [['เลขครุภัณฑ์','ชื่อครุภัณฑ์','บริษัทผู้จำหน่าย','มูลค่า (บาท)','วันที่รับไว้ (ค.ศ.)','อายุ (ปี)','สภาพ','หมายเหตุ','สถานะ']];
+    enriched.forEach(e => {
+      rows.push([
+        e.eq_no, e.name, e.supplier||'', e.cost||0,
+        beToCE(e.received), e.years.toFixed(1),
+        e.cond||'', e.note||'',
+        e.years>=5?'เกิน 5 ปี':e.years>=3?'ใกล้ครบเกณฑ์':'อยู่ในเกณฑ์',
+      ]);
+    });
+    downloadCSV('ทะเบียนครุภัณฑ์.csv', rows);
+  }
 
   return (
     <div className="page">
@@ -1291,7 +1315,7 @@ function EquipmentScreen({ equipment, canEdit, onAddEquipment, onEditEquipment, 
           <div className="page-sub">รวม {enriched.length} ชิ้น · มูลค่ารวม {fmt(totalCost)} บาท · ระบบจะแจ้งเตือนอัตโนมัติเมื่อครุภัณฑ์อายุการใช้งานเกิน <b>5 ปี</b></div>
         </div>
         <div className="page-head-actions">
-          <button className="btn btn-ghost"><Icon k="download" size={16}/><span>ส่งออก</span></button>
+          <button className="btn btn-ghost" onClick={exportEquipment}><Icon k="download" size={16}/><span>ส่งออก Excel</span></button>
           {canEdit && <button className="btn btn-primary" onClick={()=>setShowAdd(true)}><Icon k="plus" size={16}/><span>เพิ่มครุภัณฑ์</span></button>}
         </div>
       </div>
@@ -1307,13 +1331,24 @@ function EquipmentScreen({ equipment, canEdit, onAddEquipment, onEditEquipment, 
         </div>
       )}
 
-      <div className="chips-row">
-        <Chip active={filter==='all'} onClick={()=>setFilter('all')}>ทั้งหมด ({enriched.length})</Chip>
-        <Chip active={filter==='alert'} onClick={()=>setFilter('alert')}>เกิน 5 ปี ({overdue})</Chip>
-        <Chip active={filter==='ok'} onClick={()=>setFilter('ok')}>อยู่ในเกณฑ์ ({enriched.length-overdue})</Chip>
+      {/* Search + filter row */}
+      <div style={{display:'flex', gap:'10px', alignItems:'center', flexWrap:'wrap', marginBottom:'4px'}}>
+        <div className="smc-search-wrap" style={{flex:'1 1 220px', minWidth:'180px'}}>
+          <Icon k="search" size={16} className="smc-search-icon"/>
+          <input className="smc-search" placeholder="ค้นหาเลขครุภัณฑ์, ชื่อ, บริษัท…"
+            value={searchQ} onChange={e=>setSearchQ(e.target.value)}/>
+        </div>
+        <div className="chips-row" style={{marginBottom:0, flexShrink:0}}>
+          <Chip active={filter==='all'}   onClick={()=>setFilter('all')}>ทั้งหมด ({enriched.length})</Chip>
+          <Chip active={filter==='alert'} onClick={()=>setFilter('alert')}>เกิน 5 ปี ({overdue})</Chip>
+          <Chip active={filter==='ok'}    onClick={()=>setFilter('ok')}>อยู่ในเกณฑ์ ({enriched.length-overdue})</Chip>
+        </div>
       </div>
 
       <div className="ic-grid">
+        {filtered.length === 0 && (
+          <div style={{gridColumn:'1/-1', padding:'32px', textAlign:'center', color:'var(--ink-3)'}}>ไม่พบรายการที่ตรงกับคำค้นหา</div>
+        )}
         {filtered.map(e => {
           const alert = e.years >= 5;
           const yp = Math.min(1, e.years / 10);
@@ -1340,7 +1375,7 @@ function EquipmentScreen({ equipment, canEdit, onAddEquipment, onEditEquipment, 
               </div>
               <div className="muted sm" style={{ marginTop:'6px' }}>{e.loc}{e.cond ? ` · ${e.cond}` : ''}</div>
               <div className="eq-card-foot">
-                <div className="muted sm">มูลค่า {fmt(e.cost)} บาท · รับ {e.received}</div>
+                <div className="muted sm">มูลค่า {fmt(e.cost)} บาท · รับ {beToCE(e.received)}</div>
                 {canEdit && (
                   <div style={{ display:'flex', gap:'4px' }}>
                     <button className="btn btn-mini btn-ghost" onClick={()=>setEditEq(e)}>✏️</button>
@@ -1374,7 +1409,7 @@ function AddEquipmentModal({ onClose, onSave, vendors=[], onAddVendor }) {
             <div className="input-wrap"><input value={d.eq_no} onChange={e=>set('eq_no',e.target.value)} placeholder="EQ-2569-XXXX"/></div>
           </label>
           <label className="lbl">วันที่รับไว้
-            <div className="input-wrap"><input value={d.received} onChange={e=>set('received',e.target.value)} placeholder="2569-MM-DD"/></div>
+            <ThaiDatePicker value={d.received} onChange={v=>set('received',v)}/>
           </label>
         </div>
         <label className="lbl">ชื่อครุภัณฑ์ *
@@ -1419,7 +1454,7 @@ function EditEquipmentModal({ eq, onClose, onSave, vendors=[], onAddVendor }) {
             <div className="input-wrap"><input value={d.eq_no} onChange={e=>set('eq_no',e.target.value)}/></div>
           </label>
           <label className="lbl">วันที่รับไว้
-            <div className="input-wrap"><input value={d.received||''} onChange={e=>set('received',e.target.value)}/></div>
+            <ThaiDatePicker value={d.received||''} onChange={v=>set('received',v)}/>
           </label>
         </div>
         <label className="lbl">ชื่อครุภัณฑ์ *
