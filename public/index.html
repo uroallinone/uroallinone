@@ -2341,6 +2341,27 @@ body {
   .login-switch .btn-link{font-size:13px;padding:0;font-weight:600}
   .auth-loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
     color:var(--ink-3);font-size:15px}
+
+  /* ===== PostOp Screen ===== */
+  .postop-screen { overflow-y: auto; }
+  .postop-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; padding: 4px 0 32px; }
+  @media (max-width: 960px) { .postop-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 600px) { .postop-grid { grid-template-columns: 1fr; } }
+  .postop-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden;
+    display: flex; flex-direction: column; box-shadow: 0 2px 8px rgba(0,0,0,.05); }
+  .postop-card-bar { height: 7px; flex-shrink: 0; }
+  .postop-card-body { padding: 16px 16px 18px; display: flex; flex-direction: column; align-items: center; flex: 1; }
+  .postop-title { font-size: 15px; font-weight: 700; color: var(--ink); text-align: center; margin-bottom: 3px; line-height: 1.4; }
+  .postop-subtitle { font-size: 10.5px; color: var(--ink-3); margin-bottom: 14px; }
+  .postop-qr-wrap { margin-bottom: 14px; }
+  .postop-qr-inner { border: 1px solid var(--border); border-radius: 10px; padding: 8px; background: #fff; }
+  .postop-qr-inner img, .postop-qr-inner canvas { display: block; }
+  .postop-actions { display: flex; gap: 8px; }
+  @media print {
+    .sidebar, .app-header, .sb-close, .postop-actions, .page-head .btn { display: none !important; }
+    .postop-grid { grid-template-columns: repeat(3, 1fr) !important; break-inside: avoid; }
+    .postop-card { break-inside: avoid; box-shadow: none; border: 1px solid #ddd; }
+  }
 </style>
 
 <div id="root"></div>
@@ -2348,6 +2369,7 @@ body {
 <script src="/vendor/react.js"></script>
 <script src="/vendor/react-dom.js"></script>
 <script src="/vendor/babel.js"></script>
+<script src="/vendor/qrcode.min.js"></script>
 
 <!-- Supabase (auth + central database) — must load before the app modules -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -2355,11 +2377,11 @@ body {
 <script src="/app/smc-data.js"></script>
 <script src="/app/uro-supabase.js"></script>
 
-<script type="text/babel" src="/app/tweaks-panel.jsx?v=20260815d"></script>
-<script type="text/babel" src="/app/data.jsx?v=20260815d"></script>
-<script type="text/babel" src="/app/ui-shell.jsx?v=20260815d"></script>
-<script type="text/babel" src="/app/screens.jsx?v=20260815d"></script>
-<script type="text/babel" src="/app/main.jsx?v=20260815d"></script>
+<script type="text/babel" src="/app/tweaks-panel.jsx?v=20260819a"></script>
+<script type="text/babel" src="/app/data.jsx?v=20260819a"></script>
+<script type="text/babel" src="/app/ui-shell.jsx?v=20260819a"></script>
+<script type="text/babel" src="/app/screens.jsx?v=20260819a"></script>
+<script type="text/babel" src="/app/main.jsx?v=20260819a"></script>
 
 
 </body></html>

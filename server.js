@@ -112,6 +112,7 @@ const MIME = {
   '.svg':  'image/svg+xml',
   '.png':  'image/png',
   '.ico':  'image/x-icon',
+  '.pdf':  'application/pdf',
 };
 
 function serveStatic(req, res) {

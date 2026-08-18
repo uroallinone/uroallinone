@@ -426,6 +426,8 @@ function App() {
         />;
       case 'guide':
         return <GuideScreen/>;
+      case 'postop':
+        return <PostOpScreen/>;
       default: return null;
     }
   })();

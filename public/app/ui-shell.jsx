@@ -88,6 +88,7 @@ const NAV = [
   { id: 'smcguide',    label: 'คู่มือ SMC Scrub',    icon: 'receipt'  },
   { id: 'transplant',  label: 'Transplant Report',   icon: 'xplant'   },
   { id: 'guide',       label: 'คู่มือส่งเครื่องมือ', icon: 'book'    },
+  { id: 'postop',     label: 'คำแนะนำหลังผ่าตัด',  icon: 'scan'    },
 ];
 
 function Sidebar({ active, onNav, open, onClose, collapsed, user, onLogout }) {

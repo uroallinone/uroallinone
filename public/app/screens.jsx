@@ -2961,6 +2961,108 @@ function TransplantScreen({ cases=[], canEdit, onSave, onDelete }) {
   );
 }
 
+/* ===== PostOp Screen (คำแนะนำการปฏิบัติตัวหลังผ่าตัด) ===== */
+const POSTOP_GUIDES = [
+  { file: 'คำแนะนำหลังขยายท่อปัสสาวะ_A4.pdf',                  title: 'ขยายท่อปัสสาวะ',              color: '#3b82f6' },
+  { file: 'คำแนะนำหลังส่องกล้องตรวจทางเดินปัสสาวะ_A4.pdf',      title: 'ส่องกล้องตรวจทางเดินปัสสาวะ', color: '#8b5cf6' },
+  { file: 'คำแนะนำหลังเจาะชิ้นเนื้อต่อมลูกหมาก_A4.pdf',         title: 'เจาะชิ้นเนื้อต่อมลูกหมาก',   color: '#06b6d4' },
+  { file: 'คำแนะนำหลังผ่าตัดขลิบ_A4.pdf',                       title: 'ผ่าตัดขลิบ',                 color: '#f59e0b' },
+  { file: 'คำแนะนำหลังทำหมันชาย_A4.pdf',                        title: 'ทำหมันชาย',                  color: '#10b981' },
+  { file: 'คำแนะนำหลังรักษาหูดอวัยวะเพศ_A4.pdf',                title: 'รักษาหูดอวัยวะเพศ',           color: '#ef4444' },
+  { file: 'คำแนะนำหลังใส่สาย PCN_A4.pdf',                       title: 'ใส่สาย PCN',                  color: '#64748b' },
+];
+
+function PostOpCard({ guide }) {
+  const qrRef = useR(null);
+  const origin = window.location.origin;
+  const pdfPath = '/guides/' + encodeURIComponent(guide.file);
+  const fullUrl = origin + pdfPath;
+
+  useE(() => {
+    const el = qrRef.current;
+    if (!el || typeof QRCode === 'undefined') return;
+    el.innerHTML = '';
+    new QRCode(el, {
+      text: fullUrl,
+      width: 186,
+      height: 186,
+      colorDark: '#0f3d6e',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.H,
+    });
+  }, [fullUrl]);
+
+  function printQR() {
+    const canvas = qrRef.current?.querySelector('canvas');
+    const imgEl = qrRef.current?.querySelector('img');
+    const imgSrc = canvas ? canvas.toDataURL('image/png') : (imgEl ? imgEl.src : '');
+    const win = window.open('', '_blank');
+    win.document.write(`<!DOCTYPE html>
+<html><head><title>${guide.title}</title>
+<style>
+body{font-family:sans-serif;text-align:center;padding:28px 20px;background:#fff}
+.hosp{font-size:12px;color:#555;margin-bottom:2px}
+.dept{font-size:11px;color:#888;margin-bottom:18px}
+h2{font-size:14px;color:#0f3d6e;margin-bottom:6px;font-weight:700}
+h3{font-size:18px;color:#1e40af;margin-bottom:16px;font-weight:800;line-height:1.35}
+.qr-wrap{display:inline-block;border:2px solid #e2e8f0;border-radius:10px;padding:8px;background:#fff}
+.hint{font-size:12px;color:#475569;margin-top:12px}
+.url{font-size:9.5px;color:#94a3b8;margin-top:5px;word-break:break-all;max-width:280px;margin-left:auto;margin-right:auto}
+@media print{body{padding:12px}button{display:none!important}}
+</style></head><body>
+<div class="hosp">โรงพยาบาลสมเด็จพระยุพราชนครไทย</div>
+<div class="dept">แผนกผ่าตัด Uro · หน่วยส่องกล้อง</div>
+<h2>คำแนะนำการปฏิบัติตัวหลังผ่าตัด</h2>
+<h3>${guide.title}</h3>
+<div class="qr-wrap">${imgSrc ? `<img src="${imgSrc}" width="190" height="190"/>` : '<p>(QR)</p>'}</div>
+<div class="hint">สแกน QR Code เพื่อดูคำแนะนำบนมือถือ</div>
+<div class="url">${fullUrl}</div>
+<script>window.onload=()=>{setTimeout(()=>window.print(),400)}<\/script>
+</body></html>`);
+    win.document.close();
+  }
+
+  return (
+    <div className="postop-card">
+      <div className="postop-card-bar" style={{ background: guide.color }}/>
+      <div className="postop-card-body">
+        <div className="postop-title">{guide.title}</div>
+        <div className="postop-subtitle">คำแนะนำการปฏิบัติตัวหลังผ่าตัด</div>
+        <div className="postop-qr-wrap">
+          <div ref={qrRef} className="postop-qr-inner"/>
+        </div>
+        <div className="postop-actions">
+          <button className="btn btn-ghost btn-mini" onClick={() => window.open(pdfPath, '_blank')}>
+            <Icon k="book" size={13}/> ดู PDF
+          </button>
+          <button className="btn btn-primary btn-mini" onClick={printQR}>
+            <Icon k="download" size={13}/> พิมพ์ QR
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PostOpScreen() {
+  return (
+    <div className="screen-wrap postop-screen">
+      <div className="page-head">
+        <div>
+          <div className="eyebrow">Patient Education · คำแนะนำผู้ป่วย</div>
+          <h1 className="page-title">คำแนะนำการปฏิบัติตัวหลังผ่าตัด</h1>
+        </div>
+        <button className="btn btn-primary" onClick={() => window.print()}>
+          <Icon k="download" size={16}/> พิมพ์ทั้งหมด
+        </button>
+      </div>
+      <div className="postop-grid">
+        {POSTOP_GUIDES.map(g => <PostOpCard key={g.file} guide={g}/>)}
+      </div>
+    </div>
+  );
+}
+
 /* ===== Guide screen ===== */
 function GuideScreen() {
   return (
