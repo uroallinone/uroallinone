@@ -9,10 +9,11 @@ window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXB
 */
 window.URO_USERS = [
   { username: 'Baheang',     password: '46590024166', name: 'Baheang',                  role: 'admin'  },
-  { username: 'test',        password: '12345678',     name: 'test',                     role: 'editor' },
+  { username: 'test',        password: '12345678',     name: 'test',                     role: 'viewer' },
   { username: 'piyas',       password: '46590024',     name: 'ปิยะพงษ์ ปงลังกา',        role: 'editor' },
   { username: 'Aomsuriyon',  password: '29111800',     name: 'พว.ฤทัยรัตน์ สุริยน',     role: 'editor' },
   { username: 'Si',          password: '4444',         name: 'Si',                       role: 'editor' },
   { username: 'modzom_21',   password: 'Mm@12345678',  name: 'วิราภรณ์ คันทะวงค์',      role: 'editor' },
   { username: 'boombamhub',  password: 'x4982vrt',     name: 'ประดิพัทธ์ จันทาพูน',     role: 'editor' },
+  { username: 'weewy',  password: 'weewy095',     name: 'ปวีณา ทาคำ',     role: 'editor' },
 ];
