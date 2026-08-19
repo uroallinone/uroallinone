@@ -2963,32 +2963,33 @@ function TransplantScreen({ cases=[], canEdit, onSave, onDelete }) {
 
 /* ===== PostOp Screen (คำแนะนำการปฏิบัติตัวหลังผ่าตัด) ===== */
 const POSTOP_GUIDES = [
-  { file: 'คำแนะนำหลังขยายท่อปัสสาวะ_A4.pdf',                  title: 'ขยายท่อปัสสาวะ',              emoji: '🔬', grad: 'linear-gradient(135deg,#3b82f6,#1d4ed8)' },
-  { file: 'คำแนะนำหลังส่องกล้องตรวจทางเดินปัสสาวะ_A4.pdf',      title: 'ส่องกล้องตรวจทางเดินปัสสาวะ', emoji: '🔭', grad: 'linear-gradient(135deg,#8b5cf6,#6d28d9)' },
-  { file: 'คำแนะนำหลังเจาะชิ้นเนื้อต่อมลูกหมาก_A4.pdf',         title: 'เจาะชิ้นเนื้อต่อมลูกหมาก',   emoji: '🧬', grad: 'linear-gradient(135deg,#06b6d4,#0891b2)' },
-  { file: 'คำแนะนำหลังผ่าตัดขลิบ_A4.pdf',                       title: 'ผ่าตัดขลิบ',                 emoji: '🩹', grad: 'linear-gradient(135deg,#f59e0b,#d97706)' },
-  { file: 'คำแนะนำหลังทำหมันชาย_A4.pdf',                        title: 'ทำหมันชาย',                  emoji: '⚕️', grad: 'linear-gradient(135deg,#10b981,#059669)' },
-  { file: 'คำแนะนำหลังรักษาหูดอวัยวะเพศ_A4.pdf',                title: 'รักษาหูดอวัยวะเพศ',           emoji: '💊', grad: 'linear-gradient(135deg,#ef4444,#dc2626)' },
-  { file: 'คำแนะนำหลังใส่สาย PCN_A4.pdf',                       title: 'ใส่สาย PCN',                  emoji: '🩺', grad: 'linear-gradient(135deg,#64748b,#475569)' },
+  { id:1, file: 'คำแนะนำหลังขยายท่อปัสสาวะ_A4.pdf',                  title: 'ขยายท่อปัสสาวะ',              emoji: '🔬', grad: 'linear-gradient(135deg,#3b82f6,#1d4ed8)' },
+  { id:2, file: 'คำแนะนำหลังส่องกล้องตรวจทางเดินปัสสาวะ_A4.pdf',      title: 'ส่องกล้องตรวจทางเดินปัสสาวะ', emoji: '🔭', grad: 'linear-gradient(135deg,#8b5cf6,#6d28d9)' },
+  { id:3, file: 'คำแนะนำหลังเจาะชิ้นเนื้อต่อมลูกหมาก_A4.pdf',         title: 'เจาะชิ้นเนื้อต่อมลูกหมาก',   emoji: '🧬', grad: 'linear-gradient(135deg,#06b6d4,#0891b2)' },
+  { id:4, file: 'คำแนะนำหลังผ่าตัดขลิบ_A4.pdf',                       title: 'ผ่าตัดขลิบ',                 emoji: '🩹', grad: 'linear-gradient(135deg,#f59e0b,#d97706)' },
+  { id:5, file: 'คำแนะนำหลังทำหมันชาย_A4.pdf',                        title: 'ทำหมันชาย',                  emoji: '⚕️', grad: 'linear-gradient(135deg,#10b981,#059669)' },
+  { id:6, file: 'คำแนะนำหลังรักษาหูดอวัยวะเพศ_A4.pdf',                title: 'รักษาหูดอวัยวะเพศ',           emoji: '💊', grad: 'linear-gradient(135deg,#ef4444,#dc2626)' },
+  { id:7, file: 'คำแนะนำหลังใส่สาย PCN_A4.pdf',                       title: 'ใส่สาย PCN',                  emoji: '🩺', grad: 'linear-gradient(135deg,#64748b,#475569)' },
 ];
 
 function PostOpCard({ guide }) {
   const qrRef = useR(null);
   const origin = window.location.origin;
   const pdfPath = '/guides/' + encodeURIComponent(guide.file);
-  const fullUrl = origin + pdfPath;
+  const qrUrl  = origin + '/g/' + guide.id + '.html';
+  const fullUrl = qrUrl;
 
   useE(() => {
     const el = qrRef.current;
     if (!el || typeof QRCode === 'undefined') return;
     el.innerHTML = '';
     new QRCode(el, {
-      text: fullUrl,
+      text: qrUrl,
       width: 180,
       height: 180,
       colorDark: '#0f172a',
       colorLight: '#ffffff',
-      correctLevel: QRCode.CorrectLevel.H,
+      correctLevel: QRCode.CorrectLevel.M,
     });
   }, [fullUrl]);
 
