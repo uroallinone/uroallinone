@@ -2993,34 +2993,37 @@ function PostOpCard({ guide }) {
   }, [fullUrl]);
 
   function printQR() {
-    const canvas = qrRef.current?.querySelector('canvas');
-    const imgEl = qrRef.current?.querySelector('img');
+    const canvas = qrRef.current && qrRef.current.querySelector('canvas');
+    const imgEl  = qrRef.current && qrRef.current.querySelector('img');
     const imgSrc = canvas ? canvas.toDataURL('image/png') : (imgEl ? imgEl.src : '');
+    const qrHtml = imgSrc
+      ? '<img src="' + imgSrc + '" width="180" height="180" style="display:block"/>'
+      : '<div style="width:180px;height:180px;line-height:180px;color:#94a3b8">QR</div>';
+    const css = [
+      '*{box-sizing:border-box;margin:0;padding:0}',
+      'body{font-family:sans-serif;text-align:center;padding:32px 24px;background:#fff}',
+      '.hosp{font-size:13px;color:#475569;margin-bottom:2px}',
+      '.dept{font-size:11px;color:#94a3b8;margin-bottom:20px}',
+      '.lbl{font-size:12px;color:#64748b;font-weight:600;margin-bottom:10px;letter-spacing:.05em}',
+      'h3{font-size:20px;color:#0f172a;margin-bottom:20px;font-weight:800;line-height:1.3}',
+      '.qr-box{display:inline-block;border:3px solid #e2e8f0;border-radius:12px;padding:10px;background:#fff}',
+      '.hint{font-size:12px;color:#64748b;margin-top:14px}',
+      '.url{font-size:9px;color:#cbd5e1;margin-top:6px;word-break:break-all;max-width:260px;margin:6px auto 0}',
+      '@media print{body{padding:16px}button{display:none!important}}',
+    ].join('');
+    const html = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>' + guide.title + '</title>'
+      + '<style>' + css + '</style></head><body>'
+      + '<div class="hosp">โรงพยาบาลสมเด็จพระยุพราชนครไทย</div>'
+      + '<div class="dept">แผนกผ่าตัด Uro · หน่วยส่องกล้อง</div>'
+      + '<div class="lbl">คำแนะนำการปฏิบัตตัวหลังผ่าตัด</div>'
+      + '<h3>' + guide.emoji + ' ' + guide.title + '</h3>'
+      + '<div class="qr-box">' + qrHtml + '</div>'
+      + '<div class="hint">สแกน QR Code เพื่อดูคำแนะนำบนมือถือ</div>'
+      + '<div class="url">' + fullUrl + '</div>'
+      + '<scr' + 'ipt>window.onload=function(){setTimeout(function(){window.print()},500)}</scr' + 'ipt>'
+      + '</body></html>';
     const win = window.open('', '_blank');
-    win.document.write(`<!DOCTYPE html>
-<html><head><meta charset="utf-8"><title>${guide.title}</title>
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Sarabun',sans-serif;text-align:center;padding:32px 24px;background:#fff}
-.hosp{font-size:13px;color:#475569;margin-bottom:2px}
-.dept{font-size:11px;color:#94a3b8;margin-bottom:20px}
-.label{font-size:13px;color:#64748b;font-weight:600;margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em}
-h3{font-size:20px;color:#0f172a;margin-bottom:20px;font-weight:800;line-height:1.3}
-.qr-box{display:inline-block;border:3px solid #e2e8f0;border-radius:12px;padding:10px;background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.08)}
-.hint{font-size:12px;color:#64748b;margin-top:14px}
-.url{font-size:9px;color:#cbd5e1;margin-top:6px;word-break:break-all;max-width:260px;margin-inline:auto}
-@media print{body{padding:16px}button{display:none!important}}
-</style></head><body>
-<div class="hosp">โรงพยาบาลสมเด็จพระยุพราชนครไทย</div>
-<div class="dept">แผนกผ่าตัด Uro · หน่วยส่องกล้อง</div>
-<div class="label">คำแนะนำการปฏิบัติตัวหลังผ่าตัด</div>
-<h3>${guide.emoji} ${guide.title}</h3>
-<div class="qr-box">${imgSrc ? `<img src="${imgSrc}" width="180" height="180" style="display:block"/>` : '<div style="width:180px;height:180px;display:flex;align-items:center;justify-content:center;color:#94a3b8">QR</div>'}</div>
-<div class="hint">สแกน QR Code เพื่อดูคำแนะนำบนมือถือ</div>
-<div class="url">${fullUrl}</div>
-<script>window.onload=()=>{setTimeout(()=>window.print(),500)}<\/script>
-</body></html>`);
-    win.document.close();
+    if (win) { win.document.write(html); win.document.close(); }
   }
 
   return (
