@@ -2963,13 +2963,13 @@ function TransplantScreen({ cases=[], canEdit, onSave, onDelete }) {
 
 /* ===== PostOp Screen (คำแนะนำการปฏิบัติตัวหลังผ่าตัด) ===== */
 const POSTOP_GUIDES = [
-  { file: 'คำแนะนำหลังขยายท่อปัสสาวะ_A4.pdf',                  title: 'ขยายท่อปัสสาวะ',              color: '#3b82f6' },
-  { file: 'คำแนะนำหลังส่องกล้องตรวจทางเดินปัสสาวะ_A4.pdf',      title: 'ส่องกล้องตรวจทางเดินปัสสาวะ', color: '#8b5cf6' },
-  { file: 'คำแนะนำหลังเจาะชิ้นเนื้อต่อมลูกหมาก_A4.pdf',         title: 'เจาะชิ้นเนื้อต่อมลูกหมาก',   color: '#06b6d4' },
-  { file: 'คำแนะนำหลังผ่าตัดขลิบ_A4.pdf',                       title: 'ผ่าตัดขลิบ',                 color: '#f59e0b' },
-  { file: 'คำแนะนำหลังทำหมันชาย_A4.pdf',                        title: 'ทำหมันชาย',                  color: '#10b981' },
-  { file: 'คำแนะนำหลังรักษาหูดอวัยวะเพศ_A4.pdf',                title: 'รักษาหูดอวัยวะเพศ',           color: '#ef4444' },
-  { file: 'คำแนะนำหลังใส่สาย PCN_A4.pdf',                       title: 'ใส่สาย PCN',                  color: '#64748b' },
+  { file: 'คำแนะนำหลังขยายท่อปัสสาวะ_A4.pdf',                  title: 'ขยายท่อปัสสาวะ',              emoji: '🔬', grad: 'linear-gradient(135deg,#3b82f6,#1d4ed8)' },
+  { file: 'คำแนะนำหลังส่องกล้องตรวจทางเดินปัสสาวะ_A4.pdf',      title: 'ส่องกล้องตรวจทางเดินปัสสาวะ', emoji: '🔭', grad: 'linear-gradient(135deg,#8b5cf6,#6d28d9)' },
+  { file: 'คำแนะนำหลังเจาะชิ้นเนื้อต่อมลูกหมาก_A4.pdf',         title: 'เจาะชิ้นเนื้อต่อมลูกหมาก',   emoji: '🧬', grad: 'linear-gradient(135deg,#06b6d4,#0891b2)' },
+  { file: 'คำแนะนำหลังผ่าตัดขลิบ_A4.pdf',                       title: 'ผ่าตัดขลิบ',                 emoji: '🩹', grad: 'linear-gradient(135deg,#f59e0b,#d97706)' },
+  { file: 'คำแนะนำหลังทำหมันชาย_A4.pdf',                        title: 'ทำหมันชาย',                  emoji: '⚕️', grad: 'linear-gradient(135deg,#10b981,#059669)' },
+  { file: 'คำแนะนำหลังรักษาหูดอวัยวะเพศ_A4.pdf',                title: 'รักษาหูดอวัยวะเพศ',           emoji: '💊', grad: 'linear-gradient(135deg,#ef4444,#dc2626)' },
+  { file: 'คำแนะนำหลังใส่สาย PCN_A4.pdf',                       title: 'ใส่สาย PCN',                  emoji: '🩺', grad: 'linear-gradient(135deg,#64748b,#475569)' },
 ];
 
 function PostOpCard({ guide }) {
@@ -2984,9 +2984,9 @@ function PostOpCard({ guide }) {
     el.innerHTML = '';
     new QRCode(el, {
       text: fullUrl,
-      width: 186,
-      height: 186,
-      colorDark: '#0f3d6e',
+      width: 180,
+      height: 180,
+      colorDark: '#0f172a',
       colorLight: '#ffffff',
       correctLevel: QRCode.CorrectLevel.H,
     });
@@ -2998,39 +2998,43 @@ function PostOpCard({ guide }) {
     const imgSrc = canvas ? canvas.toDataURL('image/png') : (imgEl ? imgEl.src : '');
     const win = window.open('', '_blank');
     win.document.write(`<!DOCTYPE html>
-<html><head><title>${guide.title}</title>
+<html><head><meta charset="utf-8"><title>${guide.title}</title>
 <style>
-body{font-family:sans-serif;text-align:center;padding:28px 20px;background:#fff}
-.hosp{font-size:12px;color:#555;margin-bottom:2px}
-.dept{font-size:11px;color:#888;margin-bottom:18px}
-h2{font-size:14px;color:#0f3d6e;margin-bottom:6px;font-weight:700}
-h3{font-size:18px;color:#1e40af;margin-bottom:16px;font-weight:800;line-height:1.35}
-.qr-wrap{display:inline-block;border:2px solid #e2e8f0;border-radius:10px;padding:8px;background:#fff}
-.hint{font-size:12px;color:#475569;margin-top:12px}
-.url{font-size:9.5px;color:#94a3b8;margin-top:5px;word-break:break-all;max-width:280px;margin-left:auto;margin-right:auto}
-@media print{body{padding:12px}button{display:none!important}}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Sarabun',sans-serif;text-align:center;padding:32px 24px;background:#fff}
+.hosp{font-size:13px;color:#475569;margin-bottom:2px}
+.dept{font-size:11px;color:#94a3b8;margin-bottom:20px}
+.label{font-size:13px;color:#64748b;font-weight:600;margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em}
+h3{font-size:20px;color:#0f172a;margin-bottom:20px;font-weight:800;line-height:1.3}
+.qr-box{display:inline-block;border:3px solid #e2e8f0;border-radius:12px;padding:10px;background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.08)}
+.hint{font-size:12px;color:#64748b;margin-top:14px}
+.url{font-size:9px;color:#cbd5e1;margin-top:6px;word-break:break-all;max-width:260px;margin-inline:auto}
+@media print{body{padding:16px}button{display:none!important}}
 </style></head><body>
 <div class="hosp">โรงพยาบาลสมเด็จพระยุพราชนครไทย</div>
 <div class="dept">แผนกผ่าตัด Uro · หน่วยส่องกล้อง</div>
-<h2>คำแนะนำการปฏิบัติตัวหลังผ่าตัด</h2>
-<h3>${guide.title}</h3>
-<div class="qr-wrap">${imgSrc ? `<img src="${imgSrc}" width="190" height="190"/>` : '<p>(QR)</p>'}</div>
+<div class="label">คำแนะนำการปฏิบัติตัวหลังผ่าตัด</div>
+<h3>${guide.emoji} ${guide.title}</h3>
+<div class="qr-box">${imgSrc ? `<img src="${imgSrc}" width="180" height="180" style="display:block"/>` : '<div style="width:180px;height:180px;display:flex;align-items:center;justify-content:center;color:#94a3b8">QR</div>'}</div>
 <div class="hint">สแกน QR Code เพื่อดูคำแนะนำบนมือถือ</div>
 <div class="url">${fullUrl}</div>
-<script>window.onload=()=>{setTimeout(()=>window.print(),400)}<\/script>
+<script>window.onload=()=>{setTimeout(()=>window.print(),500)}<\/script>
 </body></html>`);
     win.document.close();
   }
 
   return (
     <div className="postop-card">
-      <div className="postop-card-bar" style={{ background: guide.color }}/>
+      <div className="postop-card-head" style={{ background: guide.grad }}>
+        <div className="postop-emoji">{guide.emoji}</div>
+        <div className="postop-head-title">{guide.title}</div>
+        <div className="postop-head-sub">คำแนะนำการปฏิบัติตัวหลังผ่าตัด</div>
+      </div>
       <div className="postop-card-body">
-        <div className="postop-title">{guide.title}</div>
-        <div className="postop-subtitle">คำแนะนำการปฏิบัติตัวหลังผ่าตัด</div>
-        <div className="postop-qr-wrap">
-          <div ref={qrRef} className="postop-qr-inner"/>
+        <div className="postop-qr-frame">
+          <div ref={qrRef} className="postop-qr-inner"></div>
         </div>
+        <div className="postop-hint">สแกน QR เพื่อดูบนมือถือ</div>
         <div className="postop-actions">
           <button className="btn btn-ghost btn-mini" onClick={() => window.open(pdfPath, '_blank')}>
             <Icon k="book" size={13}/> ดู PDF
@@ -3046,7 +3050,7 @@ h3{font-size:18px;color:#1e40af;margin-bottom:16px;font-weight:800;line-height:1
 
 function PostOpScreen() {
   return (
-    <div className="screen-wrap postop-screen">
+    <div className="page">
       <div className="page-head">
         <div>
           <div className="eyebrow">Patient Education · คำแนะนำผู้ป่วย</div>

@@ -2343,24 +2343,27 @@ body {
     color:var(--ink-3);font-size:15px}
 
   /* ===== PostOp Screen ===== */
-  .postop-screen { overflow-y: auto; }
-  .postop-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; padding: 4px 0 32px; }
-  @media (max-width: 960px) { .postop-grid { grid-template-columns: repeat(2, 1fr); } }
-  @media (max-width: 600px) { .postop-grid { grid-template-columns: 1fr; } }
-  .postop-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden;
-    display: flex; flex-direction: column; box-shadow: 0 2px 8px rgba(0,0,0,.05); }
-  .postop-card-bar { height: 7px; flex-shrink: 0; }
-  .postop-card-body { padding: 16px 16px 18px; display: flex; flex-direction: column; align-items: center; flex: 1; }
-  .postop-title { font-size: 15px; font-weight: 700; color: var(--ink); text-align: center; margin-bottom: 3px; line-height: 1.4; }
-  .postop-subtitle { font-size: 10.5px; color: var(--ink-3); margin-bottom: 14px; }
-  .postop-qr-wrap { margin-bottom: 14px; }
-  .postop-qr-inner { border: 1px solid var(--border); border-radius: 10px; padding: 8px; background: #fff; }
-  .postop-qr-inner img, .postop-qr-inner canvas { display: block; }
+  .postop-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  @media (max-width: 1024px) { .postop-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 640px)  { .postop-grid { grid-template-columns: 1fr; } }
+  .postop-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden;
+    display: flex; flex-direction: column; box-shadow: 0 2px 10px rgba(0,0,0,.07); transition: box-shadow .2s, transform .2s; }
+  .postop-card:hover { box-shadow: 0 6px 20px rgba(0,0,0,.13); transform: translateY(-2px); }
+  .postop-card-head { padding: 22px 20px 18px; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .postop-emoji { font-size: 36px; line-height: 1; }
+  .postop-head-title { font-size: 16px; font-weight: 800; color: #fff; text-align: center; line-height: 1.35; }
+  .postop-head-sub { font-size: 10.5px; color: rgba(255,255,255,.75); text-align: center; }
+  .postop-card-body { padding: 16px 16px 18px; display: flex; flex-direction: column; align-items: center; flex: 1; gap: 12px; }
+  .postop-qr-frame { border: 2px solid var(--border); border-radius: 12px; padding: 8px; background: #fff; }
+  .postop-qr-inner { display: block; }
+  .postop-qr-inner img, .postop-qr-inner canvas { display: block !important; }
+  .postop-hint { font-size: 11px; color: var(--ink-3); }
   .postop-actions { display: flex; gap: 8px; }
   @media print {
     .sidebar, .app-header, .sb-close, .postop-actions, .page-head .btn { display: none !important; }
-    .postop-grid { grid-template-columns: repeat(3, 1fr) !important; break-inside: avoid; }
-    .postop-card { break-inside: avoid; box-shadow: none; border: 1px solid #ddd; }
+    .postop-grid { grid-template-columns: repeat(3, 1fr) !important; }
+    .postop-card { break-inside: avoid; box-shadow: none; }
+    .postop-card:hover { transform: none; }
   }
 </style>
 
@@ -2377,11 +2380,11 @@ body {
 <script src="/app/smc-data.js"></script>
 <script src="/app/uro-supabase.js"></script>
 
-<script type="text/babel" src="/app/tweaks-panel.jsx?v=20260819a"></script>
-<script type="text/babel" src="/app/data.jsx?v=20260819a"></script>
-<script type="text/babel" src="/app/ui-shell.jsx?v=20260819a"></script>
-<script type="text/babel" src="/app/screens.jsx?v=20260819a"></script>
-<script type="text/babel" src="/app/main.jsx?v=20260819a"></script>
+<script type="text/babel" src="/app/tweaks-panel.jsx?v=20260819b"></script>
+<script type="text/babel" src="/app/data.jsx?v=20260819b"></script>
+<script type="text/babel" src="/app/ui-shell.jsx?v=20260819b"></script>
+<script type="text/babel" src="/app/screens.jsx?v=20260819b"></script>
+<script type="text/babel" src="/app/main.jsx?v=20260819b"></script>
 
 
 </body></html>
