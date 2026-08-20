@@ -2323,10 +2323,10 @@ function SMCEditModal({ item, override, onSave, onClose }) {
           ))}
           {/* total */}
           <div className="smc-edit-row smc-edit-total-row">
-            <div style={{ fontWeight:700, color:'#f1f5f9' }}>รวม</div>
+            <div style={{ fontWeight:700, color:'#1e293b' }}>รวม</div>
             <div/>
             {SMC_SITS.map(sit => (
-              <div key={sit} style={{ fontWeight:800, color:'#22d3ee', fontSize:'15px' }}>
+              <div key={sit} style={{ fontWeight:800, color:'#0284c7', fontSize:'15px' }}>
                 ฿{getTotal(sit).toLocaleString()}
               </div>
             ))}
@@ -2521,11 +2521,11 @@ function SMCGuideScreen({ user }) {
             <div key={fi} className="smc-card">
               <div className="smc-card-top">
                 <div className="smc-name">{d.name}</div>
-                <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
+                <div className="smc-action-row">
                   <div className="smc-total">{b(s.total)}</div>
-                  <button className="smc-edit-btn" title="พิมพ์แบบฟอร์ม" onClick={()=>printSMCCard(d, s, sitthi, codes, cDfSx, cDfAnes)}>🖨️</button>
+                  <button className="smc-print-btn" onClick={()=>printSMCCard(d, s, sitthi, codes, cDfSx, cDfAnes)}>🖨️ ปริ้น</button>
                   {canEdit && (
-                    <button className="smc-edit-btn" title="แก้ไขราคา" onClick={()=>setEditIdx(idx)}>✏️</button>
+                    <button className="smc-edit2-btn" onClick={()=>setEditIdx(idx)}>✏️ แก้ไข</button>
                   )}
                 </div>
               </div>
