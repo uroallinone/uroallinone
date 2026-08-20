@@ -2993,43 +2993,61 @@ function PostOpCard({ guide }) {
     el.innerHTML = '';
     new QRCode(el, {
       text: qrUrl,
-      width: 180,
-      height: 180,
+      width: 160,
+      height: 160,
       colorDark: '#0f172a',
       colorLight: '#ffffff',
       correctLevel: QRCode.CorrectLevel.M,
     });
+    // Force square — qrcodejs canvas/img may inherit container dimensions
+    const forceSquare = () => {
+      const c = el.querySelector('canvas');
+      const i = el.querySelector('img');
+      if (c) { c.style.cssText = 'display:block;width:160px!important;height:160px!important;max-width:none'; }
+      if (i) { i.style.cssText = 'display:block;width:160px!important;height:160px!important;max-width:none'; }
+    };
+    forceSquare();
+    setTimeout(forceSquare, 80);
   }, [fullUrl]);
 
   function printQR() {
     const canvas = qrRef.current && qrRef.current.querySelector('canvas');
     const imgEl  = qrRef.current && qrRef.current.querySelector('img');
     const imgSrc = canvas ? canvas.toDataURL('image/png') : (imgEl ? imgEl.src : '');
-    const qrHtml = imgSrc
-      ? '<img src="' + imgSrc + '" width="180" height="180" style="display:block"/>'
-      : '<div style="width:180px;height:180px;line-height:180px;color:#94a3b8">QR</div>';
+    const qrImg  = imgSrc
+      ? '<img src="' + imgSrc + '" style="display:block;width:130px;height:130px"/>'
+      : '<div style="width:130px;height:130px;background:#e2e8f0;border-radius:8px"></div>';
+    const absPath = window.location.origin + pdfPath;
     const css = [
       '*{box-sizing:border-box;margin:0;padding:0}',
-      'body{font-family:sans-serif;text-align:center;padding:32px 24px;background:#fff}',
-      '.hosp{font-size:13px;color:#475569;margin-bottom:2px}',
-      '.dept{font-size:11px;color:#94a3b8;margin-bottom:20px}',
-      '.lbl{font-size:12px;color:#64748b;font-weight:600;margin-bottom:10px;letter-spacing:.05em}',
-      'h3{font-size:20px;color:#0f172a;margin-bottom:20px;font-weight:800;line-height:1.3}',
-      '.qr-box{display:inline-block;border:3px solid #e2e8f0;border-radius:12px;padding:10px;background:#fff}',
-      '.hint{font-size:12px;color:#64748b;margin-top:14px}',
-      '.url{font-size:9px;color:#cbd5e1;margin-top:6px;word-break:break-all;max-width:260px;margin:6px auto 0}',
-      '@media print{body{padding:16px}button{display:none!important}}',
+      '@page{size:A4 portrait;margin:0}',
+      'html,body{width:210mm;height:297mm;overflow:hidden;background:#fff}',
+      '.pdf-area{position:absolute;top:0;left:0;right:0;bottom:68mm}',
+      'embed{width:100%;height:100%;display:block}',
+      '.qr-bar{position:absolute;bottom:0;left:0;right:0;height:68mm;',
+      '  border-top:1.5px dashed #cbd5e1;background:#fff;',
+      '  display:flex;align-items:center;justify-content:center;gap:18px;padding:0 20mm}',
+      '.qr-border{border:2px solid #e2e8f0;border-radius:10px;padding:6px;background:#fff}',
+      '.qr-text{display:flex;flex-direction:column;gap:4px}',
+      '.qr-hosp{font-size:11px;color:#64748b;font-family:sans-serif}',
+      '.qr-proc{font-size:16px;font-weight:800;color:#0f172a;font-family:sans-serif}',
+      '.qr-hint{font-size:11px;color:#475569;margin-top:4px;font-family:sans-serif}',
+      '.qr-url{font-size:9px;color:#94a3b8;margin-top:3px;font-family:monospace;word-break:break-all}',
     ].join('');
     const html = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>' + guide.title + '</title>'
       + '<style>' + css + '</style></head><body>'
-      + '<div class="hosp">' + 'โรงพยาบาลเชียงรายประชานุเคราะห์' + '</div>'
-      + '<div class="dept">แผนกผ่าตัด Uro · หน่วยส่องกล้อง</div>'
-      + '<div class="lbl">คำแนะนำการปฏิบัตตัวหลังผ่าตัด</div>'
-      + '<h3>' + guide.emoji + ' ' + guide.title + '</h3>'
-      + '<div class="qr-box">' + qrHtml + '</div>'
-      + '<div class="hint">สแกน QR Code เพื่อดูคำแนะนำบนมือถือ</div>'
-      + '<div class="url">' + fullUrl + '</div>'
-      + '<scr' + 'ipt>window.onload=function(){setTimeout(function(){window.print()},500)}</scr' + 'ipt>'
+      + '<div class="pdf-area">'
+      + '<embed src="' + absPath + '#toolbar=0&navpanes=0&scrollbar=0" type="application/pdf"/>'
+      + '</div>'
+      + '<div class="qr-bar">'
+      + '<div class="qr-border">' + qrImg + '</div>'
+      + '<div class="qr-text">'
+      + '<div class="qr-hosp">โรงพยาบาลเชียงรายประชานุเคราะห์ · แผนกผ่าตัด Uro</div>'
+      + '<div class="qr-proc">' + guide.emoji + ' ' + guide.title + '</div>'
+      + '<div class="qr-hint">สแกน QR Code เพื่อดูคำแนะนำบนมือถือ</div>'
+      + '<div class="qr-url">' + fullUrl + '</div>'
+      + '</div></div>'
+      + '<scr' + 'ipt>window.onload=function(){setTimeout(function(){window.print()},800)}</scr' + 'ipt>'
       + '</body></html>';
     const win = window.open('', '_blank');
     if (win) { win.document.write(html); win.document.close(); }
