@@ -3016,24 +3016,24 @@ function PostOpCard({ guide }) {
     const imgEl  = qrRef.current && qrRef.current.querySelector('img');
     const imgSrc = canvas ? canvas.toDataURL('image/png') : (imgEl ? imgEl.src : '');
     const qrImg  = imgSrc
-      ? '<img src="' + imgSrc + '" style="display:block;width:130px;height:130px"/>'
-      : '<div style="width:130px;height:130px;background:#e2e8f0;border-radius:8px"></div>';
+      ? '<img src="' + imgSrc + '" style="display:block;width:90px;height:90px"/>'
+      : '<div style="width:90px;height:90px;background:#e2e8f0;border-radius:8px"></div>';
     const absPath = window.location.origin + pdfPath;
     const css = [
       '*{box-sizing:border-box;margin:0;padding:0}',
       '@page{size:A4 portrait;margin:0}',
       'html,body{width:210mm;height:297mm;overflow:hidden;background:#fff}',
-      '.pdf-area{position:absolute;top:0;left:0;right:0;bottom:68mm}',
+      '.pdf-area{position:absolute;top:0;left:0;right:0;bottom:48mm}',
       'embed{width:100%;height:100%;display:block}',
-      '.qr-bar{position:absolute;bottom:0;left:0;right:0;height:68mm;',
-      '  border-top:1.5px dashed #cbd5e1;background:#fff;',
-      '  display:flex;align-items:center;justify-content:center;gap:18px;padding:0 20mm}',
-      '.qr-border{border:2px solid #e2e8f0;border-radius:10px;padding:6px;background:#fff}',
-      '.qr-text{display:flex;flex-direction:column;gap:4px}',
-      '.qr-hosp{font-size:11px;color:#64748b;font-family:sans-serif}',
-      '.qr-proc{font-size:16px;font-weight:800;color:#0f172a;font-family:sans-serif}',
-      '.qr-hint{font-size:11px;color:#475569;margin-top:4px;font-family:sans-serif}',
-      '.qr-url{font-size:9px;color:#94a3b8;margin-top:3px;font-family:monospace;word-break:break-all}',
+      '.qr-bar{position:absolute;bottom:0;left:0;right:0;height:48mm;',
+      '  border-top:1px dashed #cbd5e1;background:#fff;',
+      '  display:flex;align-items:center;justify-content:center;gap:14px;padding:0 22mm}',
+      '.qr-border{border:1.5px solid #e2e8f0;border-radius:8px;padding:4px;background:#fff;flex-shrink:0}',
+      '.qr-text{display:flex;flex-direction:column;gap:2px}',
+      '.qr-hosp{font-size:9.5px;color:#64748b;font-family:sans-serif}',
+      '.qr-proc{font-size:13px;font-weight:800;color:#0f172a;font-family:sans-serif;margin-top:1px}',
+      '.qr-hint{font-size:9.5px;color:#475569;margin-top:3px;font-family:sans-serif}',
+      '.qr-url{font-size:8px;color:#94a3b8;margin-top:2px;font-family:monospace;word-break:break-all}',
     ].join('');
     const html = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>' + guide.title + '</title>'
       + '<style>' + css + '</style></head><body>'
