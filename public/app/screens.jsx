@@ -3015,40 +3015,24 @@ function PostOpCard({ guide }) {
     const canvas = qrRef.current && qrRef.current.querySelector('canvas');
     const imgEl  = qrRef.current && qrRef.current.querySelector('img');
     const imgSrc = canvas ? canvas.toDataURL('image/png') : (imgEl ? imgEl.src : '');
-    const qrImg  = imgSrc
-      ? '<img src="' + imgSrc + '" style="display:block;width:90px;height:90px"/>'
-      : '<div style="width:90px;height:90px;background:#e2e8f0;border-radius:8px"></div>';
-    const absPath = window.location.origin + pdfPath;
-    const css = [
-      '*{box-sizing:border-box;margin:0;padding:0}',
-      '@page{size:A4 portrait;margin:6mm 0 0 0}',
-      'html,body{width:210mm;overflow:hidden;background:#fff}',
-      '.pdf-area{position:absolute;top:0;left:0;right:0;bottom:44mm;overflow:hidden}',
-      'embed{width:100%;height:calc(100% + 14mm);margin-top:-14mm;display:block}',
-      '.qr-bar{position:absolute;bottom:0;left:0;right:0;height:44mm;',
-      '  border-top:1px dashed #cbd5e1;background:#fff;',
-      '  display:flex;align-items:center;justify-content:center;gap:14px;padding:0 22mm}',
-      '.qr-border{border:1.5px solid #e2e8f0;border-radius:8px;padding:4px;background:#fff;flex-shrink:0}',
-      '.qr-text{display:flex;flex-direction:column;gap:2px}',
-      '.qr-hosp{font-size:9.5px;color:#64748b;font-family:sans-serif}',
-      '.qr-proc{font-size:13px;font-weight:800;color:#0f172a;font-family:sans-serif;margin-top:1px}',
-      '.qr-hint{font-size:9.5px;color:#475569;margin-top:3px;font-family:sans-serif}',
-      '.qr-url{font-size:8px;color:#94a3b8;margin-top:2px;font-family:monospace;word-break:break-all}',
-    ].join('');
+    const qrBlock = imgSrc
+      ? '<img src="' + imgSrc + '" style="display:block;width:200px;height:200px"/>'
+      : '<div style="width:200px;height:200px;background:#e2e8f0;border-radius:8px"></div>';
+    const css = '*{box-sizing:border-box;margin:0;padding:0}'
+      + '@page{size:A4 portrait;margin:0}'
+      + 'body{width:210mm;height:297mm;display:flex;flex-direction:column;'
+      + '  align-items:center;justify-content:center;gap:20px;background:#fff}'
+      + '.hosp{font-size:15px;color:#475569;font-family:sans-serif;letter-spacing:.3px}'
+      + '.proc{font-size:22px;font-weight:800;color:#0f172a;font-family:sans-serif}'
+      + '.qr-wrap{border:2px solid #e2e8f0;border-radius:12px;padding:10px;background:#fff}'
+      + '.url{font-size:11px;color:#94a3b8;font-family:monospace;margin-top:4px}';
     const html = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>' + guide.title + '</title>'
       + '<style>' + css + '</style></head><body>'
-      + '<div class="pdf-area">'
-      + '<embed src="' + absPath + '#toolbar=0&navpanes=0&scrollbar=0" type="application/pdf"/>'
-      + '</div>'
-      + '<div class="qr-bar">'
-      + '<div class="qr-border">' + qrImg + '</div>'
-      + '<div class="qr-text">'
-      + '<div class="qr-hosp">โรงพยาบาลเชียงรายประชานุเคราะห์ · แผนกผ่าตัด Uro</div>'
-      + '<div class="qr-proc">' + guide.emoji + ' ' + guide.title + '</div>'
-      + '<div class="qr-hint">สแกน QR Code เพื่อดูคำแนะนำบนมือถือ</div>'
-      + '<div class="qr-url">' + fullUrl + '</div>'
-      + '</div></div>'
-      + '<scr' + 'ipt>window.onload=function(){setTimeout(function(){window.print()},800)}</scr' + 'ipt>'
+      + '<div class="hosp">โรงพยาบาลเชียงรายประชานุเคราะห์ · แผนกผ่าตัด Uro</div>'
+      + '<div class="proc">' + guide.emoji + ' ' + guide.title + '</div>'
+      + '<div class="qr-wrap">' + qrBlock + '</div>'
+      + '<div class="url">' + fullUrl + '</div>'
+      + '<scr' + 'ipt>window.onload=function(){setTimeout(function(){window.print()},600)}</scr' + 'ipt>'
       + '</body></html>';
     const win = window.open('', '_blank');
     if (win) { win.document.write(html); win.document.close(); }
