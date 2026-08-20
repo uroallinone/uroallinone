@@ -2344,30 +2344,35 @@ function SMCEditModal({ item, override, onSave, onClose }) {
 
 /* ===== SMC print helper ===== */
 function printSMCCard(d, s, sitthi, codes, cDfSx, cDfAnes) {
-  const sfx        = sitthi==='ins' ? '-I' : sitthi==='th' ? '-F' : '';
-  const isForeign  = sitthi === 'th';
-  const size       = d.t === 'gt2' ? 2 : 1;
-  const sizeLabel  = d.t === 'gt2' ? 'ใหญ่' : 'เล็ก';
-  const sitthiLbl  = { crh:'CRH', ins:'Insurance', th:'ต่างชาติ' }[sitthi] || sitthi;
-  const anMethod   = s.dfAnes > 0 ? 'GA' : 'LA';
-  const fmt        = n => n ? Number(n).toLocaleString() : '0';
+  const sfx       = sitthi==='ins' ? '-I' : sitthi==='th' ? '-F' : '';
+  const isForeign = sitthi === 'th';
+  const sitthiLbl = { crh:'CRH', ins:'Insurance', th:'ต่างชาติ' }[sitthi] || sitthi;
+  const anMethod  = s.dfAnes > 0 ? 'GA' : 'LA';
+  const fmt       = n => n ? Number(n).toLocaleString() : '0';
 
-  const roomCode  = codes.room  || ('OR'  + size + 'SMC' + sfx);
-  const scrubCode = codes.scrub || ('NU'  + size + 'DF'  + sfx);
-  const anesNCode = codes.anesN || ('AN'  + size + 'DF'  + sfx);
+  // Room: derive size from price (>=3000 = ใหญ่/OR2SMC, else เล็ก/OR1SMC)
+  const isLargeRoom = s.room >= 3000;
+  const roomLabel   = isLargeRoom ? 'ใหญ่' : 'เล็ก';
+  const roomCode    = codes.room || ('OR' + (isLargeRoom ? 2 : 1) + 'SMC' + sfx);
 
-  // Rate per nurse: Thai small=420, Thai big=720; Foreign small=525, Foreign big=900
-  const nurseRate  = isForeign ? (size === 2 ? 900 : 525) : (size === 2 ? 720 : 420);
-  const nurseCount = (s.scrub && nurseRate) ? Math.round(s.scrub / nurseRate) : (size === 2 ? 3 : 2);
+  // Nurse: derive tier from price (>840 = NU2DF/720/person, else NU1DF/420/person)
+  const isLargeNurse  = s.scrub > 840;
+  const nurseBaseRate = isLargeNurse ? 720 : 420;
+  const nurseRate     = isForeign ? (isLargeNurse ? 900 : 525) : nurseBaseRate;
+  const nurseCount    = (s.scrub && nurseRate) ? Math.round(s.scrub / nurseRate) : (isLargeNurse ? 3 : 2);
+  const scrubCode     = codes.scrub || ('NU' + (isLargeNurse ? 2 : 1) + 'DF' + sfx);
+
+  // Anes nurse: always AN2DF
+  const anesNCode = codes.anesN || ('AN2DF' + sfx);
 
   const rows = [];
   if (s.dfSx)   rows.push({ code: cDfSx,    desc: 'ค่าธรรมเนียมแพทย์เฉพาะทาง ' + d.name, amt: s.dfSx });
   if (s.dfAnes) rows.push({ code: cDfAnes,   desc: 'ค่าธรรมเนียมแพทย์เฉพาะทางสำหรับวิสัญญีแพทย์ ' + d.name, amt: s.dfAnes });
-  if (s.room)   rows.push({ code: roomCode,  desc: 'ค่าห้องผ่าตัด' + sizeLabel, amt: s.room });
+  if (s.room)   rows.push({ code: roomCode,  desc: 'ค่าห้องผ่าตัด' + roomLabel, amt: s.room });
   if (s.scrub)  {
     rows.push({ code: scrubCode, desc: 'ค่าธรรมเนียมพยาบาล (' + nurseRate + '/' + nurseCount + 'คน)', amt: s.scrub });
   }
-  if (s.anesN)  rows.push({ code: anesNCode, desc: 'ค่าธรรมเนียมวิสัญญีพยาบาล (ผ่าตัด' + sizeLabel + ') (' + s.anesN + ' บาท/1คน)', amt: s.anesN });
+  if (s.anesN)  rows.push({ code: anesNCode, desc: 'ค่าธรรมเนียมวิสัญญีพยาบาล (' + s.anesN + ' บาท/1คน)', amt: s.anesN });
 
   const rowsHTML  = rows.map(r =>
     '<tr><td>&nbsp;</td><td>&nbsp;</td><td style="font-weight:700;white-space:nowrap">' + r.code +
