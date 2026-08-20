@@ -2345,6 +2345,7 @@ function SMCEditModal({ item, override, onSave, onClose }) {
 /* ===== SMC print helper ===== */
 function printSMCCard(d, s, sitthi, codes, cDfSx, cDfAnes) {
   const sfx       = sitthi==='ins' ? '-I' : sitthi==='th' ? '-F' : '';
+  const nurseSfx  = sitthi === 'th' ? '-F' : '';  // nurse/anes codes: never -I for insurance
   const isForeign = sitthi === 'th';
   const sitthiLbl = { crh:'CRH', ins:'Insurance', th:'ต่างชาติ' }[sitthi] || sitthi;
   const anMethod  = s.dfAnes > 0 ? 'GA' : 'LA';
@@ -2355,15 +2356,15 @@ function printSMCCard(d, s, sitthi, codes, cDfSx, cDfAnes) {
   const roomLabel   = isLargeRoom ? 'ใหญ่' : 'เล็ก';
   const roomCode    = codes.room || ('OR' + (isLargeRoom ? 2 : 1) + 'SMC' + sfx);
 
-  // Nurse: derive tier from price (>840 = NU2DF/720/person, else NU1DF/420/person)
-  const isLargeNurse  = s.scrub > 840;
-  const nurseBaseRate = isLargeNurse ? 720 : 420;
-  const nurseRate     = isForeign ? (isLargeNurse ? 900 : 525) : nurseBaseRate;
-  const nurseCount    = (s.scrub && nurseRate) ? Math.round(s.scrub / nurseRate) : (isLargeNurse ? 3 : 2);
-  const scrubCode     = codes.scrub || ('NU' + (isLargeNurse ? 2 : 1) + 'DF' + sfx);
+  // Nurse: threshold is 2×small-rate per sitthi (foreign small=525×2=1050, Thai=420×2=840)
+  const smallRate    = isForeign ? 525 : 420;
+  const isLargeNurse = s.scrub > smallRate * 2;
+  const nurseRate    = isLargeNurse ? (isForeign ? 900 : 720) : smallRate;
+  const nurseCount   = (s.scrub && nurseRate) ? Math.round(s.scrub / nurseRate) : (isLargeNurse ? 3 : 2);
+  const scrubCode    = codes.scrub || ('NU' + (isLargeNurse ? 2 : 1) + 'DF' + nurseSfx);
 
   // Anes nurse: always AN2DF
-  const anesNCode = codes.anesN || ('AN2DF' + sfx);
+  const anesNCode = codes.anesN || ('AN2DF' + nurseSfx);
 
   const rows = [];
   if (s.dfSx)   rows.push({ code: cDfSx,    desc: 'ค่าธรรมเนียมแพทย์เฉพาะทาง ' + d.name, amt: s.dfSx });
