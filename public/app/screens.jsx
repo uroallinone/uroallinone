@@ -2345,9 +2345,9 @@ function SMCEditModal({ item, override, onSave, onClose }) {
 /* ===== SMC print helper ===== */
 function printSMCCard(d, s, sitthi, codes, cDfSx, cDfAnes) {
   const sfx        = sitthi==='ins' ? '-I' : sitthi==='th' ? '-F' : '';
+  const isForeign  = sitthi === 'th';
   const size       = d.t === 'gt2' ? 2 : 1;
   const sizeLabel  = d.t === 'gt2' ? 'ใหญ่' : 'เล็ก';
-  const nurseCount = d.t === 'gt2' ? 3 : 2;
   const sitthiLbl  = { crh:'CRH', ins:'Insurance', th:'ต่างชาติ' }[sitthi] || sitthi;
   const anMethod   = s.dfAnes > 0 ? 'GA' : 'LA';
   const fmt        = n => n ? Number(n).toLocaleString() : '0';
@@ -2356,13 +2356,16 @@ function printSMCCard(d, s, sitthi, codes, cDfSx, cDfAnes) {
   const scrubCode = codes.scrub || ('NU'  + size + 'DF'  + sfx);
   const anesNCode = codes.anesN || ('AN'  + size + 'DF'  + sfx);
 
+  // Rate per nurse: Thai small=420, Thai big=720; Foreign small=525, Foreign big=900
+  const nurseRate  = isForeign ? (size === 2 ? 900 : 525) : (size === 2 ? 720 : 420);
+  const nurseCount = (s.scrub && nurseRate) ? Math.round(s.scrub / nurseRate) : (size === 2 ? 3 : 2);
+
   const rows = [];
   if (s.dfSx)   rows.push({ code: cDfSx,    desc: 'ค่าธรรมเนียมแพทย์เฉพาะทาง ' + d.name, amt: s.dfSx });
   if (s.dfAnes) rows.push({ code: cDfAnes,   desc: 'ค่าธรรมเนียมแพทย์เฉพาะทางสำหรับวิสัญญีแพทย์ ' + d.name, amt: s.dfAnes });
-  if (s.room)   rows.push({ code: roomCode,  desc: 'ค่าธรรมเนียมใช้ห้องผ่าตัด (' + sizeLabel + ')', amt: s.room });
+  if (s.room)   rows.push({ code: roomCode,  desc: 'ค่าห้องผ่าตัด' + sizeLabel, amt: s.room });
   if (s.scrub)  {
-    const rate = Math.round(s.scrub / nurseCount);
-    rows.push({ code: scrubCode, desc: 'ค่าธรรมเนียมพยาบาล (ผ่าตัด' + sizeLabel + ') (' + rate + ' บาท/' + nurseCount + 'คน)', amt: s.scrub });
+    rows.push({ code: scrubCode, desc: 'ค่าธรรมเนียมพยาบาล (' + nurseRate + '/' + nurseCount + 'คน)', amt: s.scrub });
   }
   if (s.anesN)  rows.push({ code: anesNCode, desc: 'ค่าธรรมเนียมวิสัญญีพยาบาล (ผ่าตัด' + sizeLabel + ') (' + s.anesN + ' บาท/1คน)', amt: s.anesN });
 
