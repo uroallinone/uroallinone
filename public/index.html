@@ -2366,9 +2366,9 @@ body {
   .postop-head-title { font-size: 16px; font-weight: 800; color: #fff; text-align: center; line-height: 1.35; }
   .postop-head-sub { font-size: 10.5px; color: rgba(255,255,255,.75); text-align: center; }
   .postop-card-body { padding: 16px 16px 18px; display: flex; flex-direction: column; align-items: center; flex: 1; gap: 12px; }
-  .postop-qr-frame { border: 2px solid var(--border); border-radius: 12px; padding: 8px; background: #fff; }
-  .postop-qr-inner { display: block; }
-  .postop-qr-inner img, .postop-qr-inner canvas { display: block !important; }
+  .postop-qr-frame { border: 2px solid var(--border); border-radius: 12px; padding: 8px; background: #fff; width: fit-content; }
+  .postop-qr-inner { display: block; width: 180px; height: 180px; }
+  .postop-qr-inner img, .postop-qr-inner canvas { display: block !important; width: 180px !important; height: 180px !important; }
   .postop-hint { font-size: 11px; color: var(--ink-3); }
   .postop-actions { display: flex; gap: 8px; }
   @media print {
@@ -2392,11 +2392,11 @@ body {
 <script src="/app/smc-data.js"></script>
 <script src="/app/uro-supabase.js"></script>
 
-<script type="text/babel" src="/app/tweaks-panel.jsx?v=20260820c"></script>
-<script type="text/babel" src="/app/data.jsx?v=20260820c"></script>
-<script type="text/babel" src="/app/ui-shell.jsx?v=20260820c"></script>
-<script type="text/babel" src="/app/screens.jsx?v=20260820c"></script>
-<script type="text/babel" src="/app/main.jsx?v=20260820c"></script>
+<script type="text/babel" src="/app/tweaks-panel.jsx?v=20260820d"></script>
+<script type="text/babel" src="/app/data.jsx?v=20260820d"></script>
+<script type="text/babel" src="/app/ui-shell.jsx?v=20260820d"></script>
+<script type="text/babel" src="/app/screens.jsx?v=20260820d"></script>
+<script type="text/babel" src="/app/main.jsx?v=20260820d"></script>
 
 
 </body></html>

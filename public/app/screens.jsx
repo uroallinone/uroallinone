@@ -3022,7 +3022,7 @@ function PostOpCard({ guide }) {
     ].join('');
     const html = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>' + guide.title + '</title>'
       + '<style>' + css + '</style></head><body>'
-      + '<div class="hosp">โรงพยาบาลสมเด็จพระยุพราชนครไทย</div>'
+      + '<div class="hosp">' + 'โรงพยาบาลเชียงรายประชานุเคราะห์' + '</div>'
       + '<div class="dept">แผนกผ่าตัด Uro · หน่วยส่องกล้อง</div>'
       + '<div class="lbl">คำแนะนำการปฏิบัตตัวหลังผ่าตัด</div>'
       + '<h3>' + guide.emoji + ' ' + guide.title + '</h3>'
