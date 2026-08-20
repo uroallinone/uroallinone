@@ -3021,11 +3021,11 @@ function PostOpCard({ guide }) {
     const absPath = window.location.origin + pdfPath;
     const css = [
       '*{box-sizing:border-box;margin:0;padding:0}',
-      '@page{size:A4 portrait;margin:0}',
-      'html,body{width:210mm;height:297mm;overflow:hidden;background:#fff}',
-      '.pdf-area{position:absolute;top:0;left:0;right:0;bottom:48mm}',
-      'embed{width:100%;height:100%;display:block}',
-      '.qr-bar{position:absolute;bottom:0;left:0;right:0;height:48mm;',
+      '@page{size:A4 portrait;margin:6mm 0 0 0}',
+      'html,body{width:210mm;overflow:hidden;background:#fff}',
+      '.pdf-area{position:absolute;top:0;left:0;right:0;bottom:44mm;overflow:hidden}',
+      'embed{width:100%;height:calc(100% + 14mm);margin-top:-14mm;display:block}',
+      '.qr-bar{position:absolute;bottom:0;left:0;right:0;height:44mm;',
       '  border-top:1px dashed #cbd5e1;background:#fff;',
       '  display:flex;align-items:center;justify-content:center;gap:14px;padding:0 22mm}',
       '.qr-border{border:1.5px solid #e2e8f0;border-radius:8px;padding:4px;background:#fff;flex-shrink:0}',
