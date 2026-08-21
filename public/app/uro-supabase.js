@@ -208,8 +208,7 @@
     pushTimer = setTimeout(async () => {
       try {
         const { error } = await client.from('uro_data')
-          .update({ data: payload, updated_by: dataObj.by || '', updated_at: new Date().toISOString() })
-          .eq('id', ROW_ID);
+          .upsert({ id: ROW_ID, data: payload, updated_by: dataObj.by || '', updated_at: new Date().toISOString() });
         if (error) throw error;
       } catch (e) {
         emit('status', { state: 'error', message: e.message || String(e) });
